@@ -9,7 +9,7 @@ The Haus Vault
   - Operator executes, user authorizes (owner-sig) OR session key (session-sig)
   - Sessions: withdraw + bridge only (1 active session per owner)
   - Session token limits configured per token (NO arrays, NO loops) => avoids Yul stack-deep
-  - CCIP USDC rail: strict src selector + src vault verification
+  - CCIP Stablecoin rail: strict src selector + src vault verification
   - Swap support included but disabled by allowlists by default (owner-signed only)
   - Native wrap/unwrap: vault stores ONLY wNative (WAVAX/etc). Users can deposit native; withdraw native unwraps.
 
