@@ -28,10 +28,10 @@ The Haus Vault
 
   ccip avaxfuji 0xF694E193200268f9a4868e4Aa017A0118C9a8177 (selector avaxfuji 14767482510784806043 )
   usdc avaxfuji 0x5425890298aed601595a70AB815c96711a31Bc65   
-  wavax: avaxfuji  0xA751D2226402F0d5124D407b7aD16ef3fd8A7862
+  wavax: avaxfuji  0xd00ae08403B9bbb9124bB305C09058E32C39A48c
 
-  https://testnet.routescan.io/address/0xd5919043c1cab69e71717283bcd98075700a1c98/contract/43113/code
-  https://testnet.snowscan.xyz/address/0x636f2F34DEBeAB0eeDDb7fAB1fFb6C0172E757eF#code
+  https://repo.sourcify.dev/43113/0x49D0c30A6C48A1dB80eFf65ffF0083A389a94dab/
+
 */
 
 interface IWETH {
