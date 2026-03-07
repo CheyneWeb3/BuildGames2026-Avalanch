@@ -24,12 +24,13 @@ The Haus Vault
   - Native wrap/unwrap: vault stores ONLY wNative (WAVAX/etc). Users can deposit native; withdraw native unwraps.
 
   Notes:
-  - Credits/ledger live offchain (server/indexer). Vault is custody + authorization.
+  - Credits/ledger live offchain (server/indexer). Vault is custody + authorization onchain.
 
   ccip avaxfuji 0xF694E193200268f9a4868e4Aa017A0118C9a8177 (selector avaxfuji 14767482510784806043 )
   usdc avaxfuji 0x5425890298aed601595a70AB815c96711a31Bc65   
-  wavax: avaxfuji  0xEf6fA6B505680fFB0577a8141a573dc378bDc926
+  wavax: avaxfuji  0xA751D2226402F0d5124D407b7aD16ef3fd8A7862
 
+  https://testnet.routescan.io/address/0xd5919043c1cab69e71717283bcd98075700a1c98/contract/43113/code
   https://testnet.snowscan.xyz/address/0x636f2F34DEBeAB0eeDDb7fAB1fFb6C0172E757eF#code
 */
 
