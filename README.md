@@ -10,7 +10,7 @@ The core idea is simple:
 
 **bring wallet-backed value into a structured cashier system, then let applications and integrations use that value through cleaner user flows.**
 
-![The Haus Hero Image](https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/hausstructure.png)
+![The Haus Hero Image](https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/hero.png)
 
 ---
 
