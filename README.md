@@ -20,7 +20,7 @@ The core idea is simple:
 - **Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
 - **Telegram Bot:** [@TheHausAvaxFujiMvpBot](https://t.me/TheHausAvaxFujiMvpBot)
 - **Telegram Community Group:** [Join Telegram Group](https://t.me/+q7Y7PCTU3DI4YWM9)
-- **Demo Video:** [https://www.youtube.com/watch?v=8u3g21UKsr0](Updating Soon)
+- **Demo Video:** [ https://www.youtube.com/watch?v=8u3g21UKsr0 ]( https://www.youtube.com/watch?v=8u3g21UKsr0 )
 
 ---
 
