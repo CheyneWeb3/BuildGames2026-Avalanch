@@ -1,14 +1,3 @@
-Absolutely. The right structure is:
-
-* **main focus:** wallet-first modular cashier for Avalanche apps and games
-* **secondary proof:** social integrations like Telegram showing the same cashier can power bot-driven spending, notifications, admin actions, and community mechanics
-
-That makes the project look bigger, more reusable, and better thought through without letting Telegram hijack the core story.
-
-Below is a fuller README draft you can edit down.
-
----
-
 # The Haus Cashier
 
 **A modular cashier, balance, and spend system for Avalanche applications, games, and social platforms.**
