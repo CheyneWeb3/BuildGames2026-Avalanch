@@ -164,8 +164,8 @@ That makes it useful for builders who want to create web3 applications without r
 
 The main review path for judges is the web dapp experience.
 
-**Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
-**Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
+- **Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
+- **Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
 
 ### User flow
 
