@@ -16,11 +16,11 @@ The core idea is simple:
 
 ## Quick Links
 
-**Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
-**Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
-**Telegram Bot:** [@TheHausAvaxFujiMvpBot](https://t.me/TheHausAvaxFujiMvpBot)
-**Telegram Community Group:** [Join Telegram Group](https://t.me/+q7Y7PCTU3DI4YWM9)
-**Demo Video:** [PASTE_VIDEO_URL_HERE](PASTE_VIDEO_URL_HERE)
+- **Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
+- **Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
+- **Telegram Bot:** [@TheHausAvaxFujiMvpBot](https://t.me/TheHausAvaxFujiMvpBot)
+- **Telegram Community Group:** [Join Telegram Group](https://t.me/+q7Y7PCTU3DI4YWM9)
+- **Demo Video:** [PASTE_VIDEO_URL_HERE](PASTE_VIDEO_URL_HERE)
 
 ---
 
