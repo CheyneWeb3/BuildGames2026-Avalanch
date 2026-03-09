@@ -1,0 +1,688 @@
+/* src/pages/VaultAdminPage.css */
+
+:root {
+  --bg: #0b0a0f;
+  --card: rgba(255,255,255,0.06);
+  --card2: rgba(0,0,0,0.20);
+  --border: rgba(255,255,255,0.12);
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.72);
+}
+
+.va-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(232,65,66,0.14), transparent 60%),
+    radial-gradient(1200px 600px at 90% 0%, rgba(255,107,107,0.12), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  padding: 18px 14px 36px;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+.va-header {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.va-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.va-subtitle {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
+.va-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.va-topbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.va-kvline {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.va-kvlabel {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 64px;
+}
+
+.va-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+  font-size: 12.5px;
+}
+
+.va-notice {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.va-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.va-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.va-cardTitle {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.va-cardSub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.va-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.va-row:last-child { border-bottom: none; }
+
+.va-rowLabel {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.va-rowValue {
+  font-size: 13px;
+}
+
+.va-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.va-kv {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+}
+
+.va-kvKey {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* Inputs */
+.va-input, .va-select {
+  width: 100%;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 10px;
+  outline: none;
+}
+
+.va-input::placeholder { color: rgba(255,255,255,0.45); }
+
+.va-input:focus, .va-select:focus {
+  border-color: rgba(232,65,66,0.55);
+  box-shadow: 0 0 0 3px rgba(232,65,66,0.15);
+}
+
+/* Buttons */
+.va-btn {
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 750;
+  font-size: 13px;
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: transform .06s ease, filter .12s ease, background .12s ease, border-color .12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.va-btn:active { transform: translateY(1px); }
+
+.va-btnIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.va-btnPrimary {
+  background: linear-gradient(180deg, rgba(232,65,66,0.95), rgba(198,46,57,0.95));
+  color: white;
+}
+
+.va-btnGhost {
+  background: rgba(255,255,255,0.07);
+  color: var(--text);
+}
+
+.va-btnDanger {
+  background: linear-gradient(180deg, rgba(255,107,107,0.95), rgba(214,58,73,0.95));
+  color: white;
+}
+
+.va-btn:hover { filter: brightness(1.05); }
+.va-btnDisabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: none !important;
+}
+
+.va-actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.va-actionCard {
+  background: var(--card2);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.va-actionTitle {
+  font-size: 13px;
+  font-weight: 850;
+  margin-bottom: 8px;
+}
+
+.va-formRow {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.va-resultBox {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.va-ul {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
+  font-size: 13px;
+  color: rgba(255,255,255,0.88);
+}
+
+/* =========================
+   Tabs (added)
+   ========================= */
+.va-tabs{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+  padding:8px;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling: touch;
+  background: rgba(0,0,0,0.10);
+}
+
+.va-tab{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+  cursor:pointer;
+  white-space:nowrap;
+  font-weight: 800;
+  transition: background .12s ease, border-color .12s ease, filter .12s ease;
+}
+.va-tab:hover { filter: brightness(1.05); }
+
+.va-tabActive{
+  background: rgba(232,65,66,0.18);
+  border-color: rgba(59,130,246,0.35);
+  color: rgb(147,197,253);
+}
+
+/* =========================
+   Toolbar (added)
+   ========================= */
+.va-toolbar{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-top:12px;
+}
+
+.va-toolbarMeta{
+  margin-left:auto;
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
+}
+
+/* =========================
+   Token Table + Cards (added)
+   ========================= */
+.va-tableWrap{
+  overflow-x:auto;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;
+  margin-top:12px;
+  background: rgba(0,0,0,0.08);
+}
+
+.va-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width: 980px; /* desktop friendly; allows horizontal scroll on smaller laptops */
+}
+
+.va-table th,.va-table td{
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  text-align:left;
+  vertical-align:top;
+}
+
+.va-table th{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color: rgba(255,255,255,0.70);
+  background: rgba(255,255,255,0.03);
+}
+
+.va-table tr:hover td{
+  background: rgba(255,255,255,0.02);
+}
+
+.va-cards{
+  display:none; /* enabled on mobile */
+  margin-top:12px;
+  gap:12px;
+}
+
+.va-tokenCard{
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;
+  padding:12px;
+  background: rgba(255,255,255,0.03);
+}
+
+.va-tokenCardTop{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+}
+
+.va-tokenSym{
+  font-weight:900;
+  font-size:16px;
+  letter-spacing: 0.2px;
+}
+
+.va-tokenBal{
+  font-weight:900;
+  font-size:16px;
+}
+
+.va-tokenGrid{
+  display:grid;
+  gap:10px;
+  margin-top:12px;
+}
+
+.va-tokenKv{
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.va-tokenKey{
+  font-size:12px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom:6px;
+}
+
+.va-tokenWarn{
+  margin-top:10px;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.12);
+  color: rgba(255,255,255,0.9);
+}
+
+/* Stack form inputs nicely */
+.va-formStack{
+  display:grid;
+  gap:10px;
+  margin-top:10px;
+}
+
+/* =========================
+   NEW: Token cell + avatars
+   ========================= */
+.va-tokenCell{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.va-tokenCellTop{
+  font-weight: 850;
+}
+
+.va-tokenCellSub{
+  opacity: 0.78;
+  font-size: 12px;
+}
+
+.va-tokenAvatarSm{
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.20);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex: 0 0 auto;
+}
+.va-tokenAvatarSm img{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+}
+.va-tokenAvatarFallbackSm{
+  font-weight: 900;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* selector row with bigger avatar */
+.va-tokenSelectRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.va-tokenAvatar{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.20);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex: 0 0 auto;
+}
+.va-tokenAvatar img{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+}
+.va-tokenAvatarFallback{
+  font-weight: 900;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* =========================
+   NEW: Inline help row
+   ========================= */
+.va-inlineHelp{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  padding:10px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.14);
+}
+
+.va-inlineHelpLabel{
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .75;
+}
+
+.va-inlineHelpValue{
+  margin-top: 6px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.va-inlineHelpLeft,
+.va-inlineHelpRight{
+  min-width: 240px;
+}
+
+/* =========================
+   NEW: Amount row with Max
+   ========================= */
+.va-amountRow{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items:center;
+}
+
+/* =========================
+   NEW: Link style
+   ========================= */
+.va-link{
+  color: rgb(147,197,253);
+  text-decoration: none;
+}
+.va-link:hover{
+  text-decoration: underline;
+}
+
+/* =========================
+   NEW: Status pills
+   ========================= */
+.va-pillOk{
+  border-color: rgba(34,197,94,0.45);
+  color: rgba(187,247,208,0.95);
+  background: rgba(34,197,94,0.12);
+}
+.va-pillBad{
+  border-color: rgba(255,107,107,0.45);
+  color: rgba(254,202,202,0.95);
+  background: rgba(239,68,68,0.12);
+}
+.va-pillWait{
+  border-color: rgba(250,204,21,0.35);
+  color: rgba(254,249,195,0.92);
+  background: rgba(250,204,21,0.10);
+}
+
+/* =========================
+   NEW: Modal styles
+   ========================= */
+.va-modalBackdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 14px;
+  z-index: 9999;
+}
+
+.va-modal{
+  width: min(720px, 96vw);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background:
+    radial-gradient(900px 400px at 10% 10%, rgba(232,65,66,0.12), transparent 60%),
+    radial-gradient(900px 400px at 90% 0%, rgba(255,107,107,0.12), transparent 55%),
+    rgba(10,14,26,0.96);
+  box-shadow: 0 18px 70px rgba(0,0,0,0.55);
+  overflow:hidden;
+}
+
+.va-modalHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.va-modalTitle{
+  font-weight: 900;
+  letter-spacing: .2px;
+}
+
+.va-modalClose{
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.va-modalClose:hover{ filter: brightness(1.05); }
+
+.va-modalBody{
+  padding: 14px;
+}
+
+.va-modalFooter{
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.10);
+}
+
+.va-modalStack{
+  display:grid;
+  gap: 10px;
+}
+
+.va-modalText{
+  color: rgba(255,255,255,0.86);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.va-modalKV{
+  display:grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.14);
+}
+
+.va-modalKey{
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
+}
+
+.va-modalVal{
+  font-size: 13px;
+}
+
+/* =========================
+   Responsive (Mobile)
+   ========================= */
+@media (max-width: 980px) {
+  .va-grid2 { grid-template-columns: 1fr; }
+  .va-actionGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px){
+  /* hide table, show cards */
+  .va-tableWrap{ display:none; }
+  .va-cards{ display:grid; }
+  .va-toolbarMeta{ margin-left:0; width:100%; }
+
+  /* tabs feel better on mobile */
+  .va-tabs{
+    padding: 6px;
+    border-radius: 14px;
+  }
+  .va-tab{
+    padding: 9px 10px;
+    border-radius: 12px;
+  }
+
+  .va-modalKV{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .va-page { padding: 14px 10px 30px; }
+  .va-row { grid-template-columns: 120px 1fr; }
+  .va-formRow { grid-template-columns: 1fr; }
+  .va-kvlabel { min-width: auto; }
+  .va-inlineHelpLeft, .va-inlineHelpRight { min-width: 100%; }
+  .va-amountRow { grid-template-columns: 1fr; }
+}

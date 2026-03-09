@@ -1,0 +1,248 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------------------------------------------------
+   STAG → FCKN MIGRATION THEME (WARM FIRE / EMBER)
+   - dark glass panels
+   - ember/orange glow borders
+   - fiery primary button (subtle gradient)
+   - background image stays visible with warm blur overlay
+-------------------------------------------------------- */
+
+/* GLOBAL */
+:root {
+  --vk-fg: rgba(255, 246, 235, 0.96);
+  --vk-muted: rgba(255, 230, 205, 0.80);
+  --vk-fire-1: rgba(249, 163, 28, 1);
+  --vk-fire-2: rgba(246, 125, 48, 1);
+  --vk-fire-3: rgba(241, 91, 29, 1);
+  --vk-ember: rgba(219, 88, 57, 1);
+  --vk-line: rgba(249, 163, 28, 0.16);
+  --vk-line-strong: rgba(249, 163, 28, 0.28);
+  --vk-glass: rgba(0, 0, 0, 0.34);
+  --vk-glass-2: rgba(0, 0, 0, 0.28);
+  --vk-glass-3: rgba(0, 0, 0, 0.40);
+  --vk-shadow: 0 12px 34px rgba(0, 0, 0, 0.44);
+  --vk-ring: 0 0 0 1px rgba(249, 163, 28, 0.10);
+  --vk-ring-strong: 0 0 0 3px rgba(249, 163, 28, 0.16);
+}
+
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply antialiased;
+  background: #000;
+  color: var(--vk-fg);
+}
+
+#app {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* -------------------------------------------------------
+   BACKGROUND (image/video) + WARM GLASS OVERLAY
+-------------------------------------------------------- */
+
+.vk-bg-video-container {
+  position: fixed;
+  inset: 0;
+  z-index: -30;
+  overflow: hidden;
+  pointer-events: none;
+  background: transparent;
+}
+.vk-bg-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: contrast(1.08) saturate(1.05) brightness(0.92);
+}
+
+/* Warm overlay: ember glow + dark blur */
+.vk-bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(249, 163, 28, 0.22) 0%, transparent 55%),
+    radial-gradient(circle at 80% 65%, rgba(241, 91, 29, 0.14) 0%, transparent 62%),
+    radial-gradient(circle at 15% 70%, rgba(219, 88, 57, 0.12) 0%, transparent 60%),
+    rgba(0, 0, 0, 0.64);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* -------------------------------------------------------
+   CARDS / PANELS (glass + ember border + glow)
+-------------------------------------------------------- */
+
+.vk-card,
+.vk-panel,
+.rounded-2xl,
+.rounded-xl,
+.rounded-lg {
+  @apply backdrop-blur-md;
+  background: var(--vk-glass) !important;
+  border: 1px solid var(--vk-line-strong) !important;
+  box-shadow: var(--vk-shadow), inset 0 1px 0 rgba(249, 163, 28, 0.10) !important;
+}
+
+/* Stronger main container */
+.vk-card-strong {
+  background: rgba(0, 0, 0, 0.36) !important;
+  border: 1px solid rgba(249, 163, 28, 0.34) !important;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(249, 163, 28, 0.12) !important;
+}
+
+/* -------------------------------------------------------
+   BUTTONS (pill / glass / ember ring)
+-------------------------------------------------------- */
+
+button,
+input[type="submit"],
+[type="button"] {
+  background: rgba(0, 0, 0, 0.26) !important;
+  color: var(--vk-fg) !important;
+  border: 1.5px solid rgba(249, 163, 28, 0.28) !important;
+  border-radius: 9999px !important;
+
+  min-height: 44px;
+  padding: 14px 22px;
+
+  font-weight: 800;
+  letter-spacing: 0.2px;
+
+  box-shadow: var(--vk-ring), 0 10px 26px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, filter 160ms ease, opacity 160ms ease;
+}
+
+button:hover,
+input[type="submit"]:hover,
+[type="button"]:hover {
+  border-color: rgba(249, 163, 28, 0.42) !important;
+  box-shadow: var(--vk-ring-strong), 0 14px 34px rgba(0, 0, 0, 0.52);
+  transform: translateY(-1px);
+}
+
+button:active,
+input[type="submit"]:active,
+[type="button"]:active {
+  transform: translateY(0px);
+}
+
+/* Disabled */
+button:disabled,
+input[type="submit"]:disabled,
+[type="button"]:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Primary (fiery but not neon) */
+.vk-btn-primary,
+button.vk-btn-primary {
+  background:
+    linear-gradient(180deg, rgba(249, 163, 28, 0.16), rgba(241, 91, 29, 0.10)),
+    rgba(0, 0, 0, 0.30) !important;
+  border-color: rgba(249, 163, 28, 0.46) !important;
+  font-weight: 900 !important;
+  box-shadow:
+    0 0 0 1px rgba(249, 163, 28, 0.12),
+    0 12px 30px rgba(0, 0, 0, 0.50),
+    inset 0 1px 0 rgba(255, 210, 140, 0.14) !important;
+}
+
+/* Smaller icon/copy buttons */
+.vk-btn-icon,
+button.vk-btn-icon {
+  min-height: 38px;
+  padding: 10px 12px;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(0, 0, 0, 0.30) !important;
+  box-shadow: none;
+}
+
+/* Keep text inherit */
+button span,
+button div {
+  color: inherit !important;
+}
+
+/* -------------------------------------------------------
+   TEXT COLORS (warm white / ember-muted)
+-------------------------------------------------------- */
+
+.text-slate-100,
+.text-slate-200,
+.text-slate-300,
+.text-gray-300 {
+  color: rgba(255, 246, 235, 0.94) !important;
+}
+.text-slate-400,
+.text-slate-500,
+.text-slate-600 {
+  color: rgba(255, 230, 205, 0.74) !important;
+}
+
+h1, h2, h3, h4 {
+  color: rgba(255, 248, 240, 0.98);
+}
+
+/* -------------------------------------------------------
+   INPUTS (glass fields + warm focus ring)
+-------------------------------------------------------- */
+
+input:not([type="submit"]):not([type="button"]),
+textarea,
+select {
+  background: var(--vk-glass-3) !important;
+  border: 1px solid rgba(249, 163, 28, 0.16) !important;
+  color: var(--vk-fg) !important;
+  border-radius: 18px !important;
+
+  padding: 14px !important;
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 220, 190, 0.45) !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(249, 163, 28, 0.42) !important;
+  box-shadow: 0 0 0 3px rgba(249, 163, 28, 0.16) !important;
+}
+
+/* -------------------------------------------------------
+   TABLE (subtle warm lines)
+-------------------------------------------------------- */
+table { color: var(--vk-fg); }
+th { border-bottom: 1px solid rgba(255, 255, 255, 0.14); }
+td { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+
+/* -------------------------------------------------------
+   SCROLLBAR (ember)
+-------------------------------------------------------- */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.84); }
+::-webkit-scrollbar-thumb { background: rgba(249,163,28,0.22); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(249,163,28,0.32); }

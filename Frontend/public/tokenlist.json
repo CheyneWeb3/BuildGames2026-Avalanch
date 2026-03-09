@@ -1,0 +1,31 @@
+{
+  "name": "YetiCashier Token List - Avalanche Fuji",
+  "timestamp": "2026-03-07T00:00:00Z",
+  "version": { "major": 1, "minor": 1, "patch": 0 },
+  "tags": {},
+  "keywords": [
+    "thehaus",
+    "tokenlist",
+    "avalanche",
+    "fuji",
+    "testnet"
+  ],
+  "tokens": [
+    {
+      "name": "Wrapped AVAX",
+      "symbol": "WAVAX",
+      "address": "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
+      "chainId": 43113,
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/avalanchec/info/logo.png"
+    },
+    {
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "address": "0x5425890298aed601595a70AB815c96711a31Bc65",
+      "chainId": 43113,
+      "decimals": 6,
+      "logoURI": "https://developers.circle.com/favicon.ico"
+    }
+  ]
+}

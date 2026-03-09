@@ -1,0 +1,114 @@
+{
+  "$schema": "https://uniswap.org/tokenlist.schema.json",
+  "name": "FoxySwap Default",
+  "timestamp": "2025-08-09T17:36:48.691Z",
+  "version": {
+    "major": 2,
+    "minor": 1,
+    "patch": 0
+  },
+  "logoURI": "https://toshibaswap.com/images/token.png",
+  "keywords": [
+    "toshibaswap",
+    "default",
+    "base"
+  ],
+  "tokens": [
+    {
+      "name": "Tether USDT",
+      "symbol": "USDT",
+      "address": "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+      "chainId": 8453,
+      "decimals": 6,
+      "logoURI": "https://tokens.pancakeswap.finance/images/symbol/usdt.png"
+    },
+    {
+      "name": "Wrapped RBAT",
+      "symbol": "WRBAT",
+      "address": "0x0C6eF4f55f315C524C590572625d733491DC0921",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/CheyneWeb3/FoxySwap-Public/refs/heads/main/public/arborswap.png"
+    },
+    {
+    "name": "Hype",
+    "symbol": "HYPE",
+    "address": "0x437b8d91984106469742c501Daa16Ad16d3d7F4B",
+    "chainId": 159,
+    "decimals": 18,
+    "logoURI": "https://docs.chain.link/assets/chains/hyperevm.svg"
+    },
+    {
+      "name": "Green Bitcoin",
+      "symbol": "GBTC",
+      "address": "0x15E1CCa3A30Ee3750a4fb8f0d2410acd88B46A55",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://foxyexchange.netlify.app/images/green-bitcoin.png"
+    },
+    {
+      "name": "Gold 1oz - Fox Mining Co",
+      "symbol": "GOLD",
+      "address": "0xD1EaB7988425567B5824cE8d8EfA6e51B7aD821f",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://assets.coingecko.com/coins/images/70395/standard/%E9%BB%84%E9%87%91.png?1761795141"
+    },
+    {
+      "name": "Wrapped Binance Test",
+      "symbol": "tWBNB",
+      "address": "0x3600575C61f83Da4d687f215889Fdf39119384b1",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://tokens.pancakeswap.finance/images/symbol/bnb.png"
+    },
+    {
+      "name": "Wrapped Ripple Test",
+      "symbol": "tXRP",
+      "address": "0x9cE9C964a51AE9dB1c9A7340941B333B57aB94fC",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://assets.coingecko.com/coins/images/19952/thumb/WXRP_revision-256px.png?1696519369"
+    },
+    {
+      "name": "Tesla Inc Token",
+      "symbol": "TSLA",
+      "address": "0x4bE0Ae6aE8C34267D9E97A51867408b6ed46051d",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://foxyswap.net/images/routerlogos/tsla.webp"
+    },
+    {
+    "name": "Silver 1 oz - Fox Mining Co",
+    "symbol": "SILVER",
+    "address": "0xd6227a21FF71C158F3FD9D9F4D232A8C227c3609",
+    "chainId": 159,
+    "decimals": 18,
+    "logoURI": "https://foxymeme.com/assets/images/silverfox.png"
+    },
+    {
+      "name": "Foxed USD",
+      "symbol": "FoxedUSD",
+      "address": "0x17b587e6d5ecf9558c0F9a69f5f7A0710C757a8d",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://foxyexchange.netlify.app/images/defaulttoken.png"
+    },
+    {
+      "name": "Delaney Token",
+      "symbol": "PXX",
+      "address": "0xc3C62fd879EeF632D74b3958B9C0466eBfee27cd",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://foxyexchange.netlify.app/images/defaulttoken.png"
+    },
+    {
+      "name": "Foxy RBAT",
+      "symbol": "MFOXY",
+      "address": "0x237787FAdD3638282f981F44BFfa76619b2BA9a4",
+      "chainId": 159,
+      "decimals": 18,
+      "logoURI": "https://raw.githubusercontent.com/CheyneWeb3/FoxySwap-Public/refs/heads/main/Assets/foxonly2.png"
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+.dh-dice-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(120,119,198,0.18), transparent 35%), #090d18;
+  color: #eef2ff;
+}
+
+.dh-dice-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.dh-dice-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.dh-dice-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
+  gap: 16px;
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+.dh-dice-kicker {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 8px;
+}
+
+.dh-dice-hero h1 {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.dh-dice-hero p {
+  margin: 0;
+  color: rgba(238, 242, 255, 0.82);
+  line-height: 1.6;
+}
+
+.dh-dice-heroCard,
+.dh-dice-card {
+  border: 1px solid rgba(255,255,255,0.09);
+  background: rgba(14, 20, 36, 0.88);
+  border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.24);
+}
+
+.dh-dice-heroCard {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dh-dice-statLabel,
+.dh-dice-label,
+.dh-dice-rules span,
+.dh-dice-inlineMeta span {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.66;
+}
+
+.dh-dice-statValue {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 8px 0 6px;
+}
+
+.dh-dice-statMeta,
+.dh-dice-help,
+.dh-dice-tokenAddr,
+.dh-dice-activityMeta {
+  color: rgba(238,242,255,0.7);
+  font-size: 13px;
+}
+
+.dh-dice-banner {
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.dh-dice-banner-warn {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.dh-dice-banner-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.dh-dice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dh-dice-card {
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.dh-dice-cardTitle {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.dh-dice-rules {
+  display: grid;
+  gap: 12px;
+}
+
+.dh-dice-rules div,
+.dh-dice-inlineMeta div,
+.dh-dice-tokenRow,
+.dh-dice-activityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dh-dice-rules b,
+.dh-dice-inlineMeta b,
+.dh-dice-tokenAmt,
+.dh-dice-activityAmt {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.dh-dice-input {
+  width: 100%;
+  margin-top: 8px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #eef2ff;
+  padding: 12px 14px;
+  font-size: 15px;
+}
+
+.dh-dice-inlineMeta {
+  margin-bottom: 14px;
+}
+
+.dh-dice-btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dh-dice-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dh-dice-btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: white;
+}
+
+.dh-dice-btn-ghost {
+  background: rgba(255,255,255,0.06);
+  color: #eef2ff;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.dh-dice-empty {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  color: rgba(238,242,255,0.72);
+}
+
+.dh-dice-tokenList,
+.dh-dice-activityList {
+  display: grid;
+  gap: 10px;
+}
+
+.dh-dice-tokenRow,
+.dh-dice-activityRow {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.dh-dice-tokenRow.is-selected {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(37, 99, 235, 0.14);
+}
+
+.dh-dice-tokenSym,
+.dh-dice-activityKind {
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+@media (max-width: 860px) {
+  .dh-dice-hero,
+  .dh-dice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dh-dice-topbar {
+    flex-direction: column;
+  }
+}
+
+.dh-dice-hero p code {
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.92em;
+}
+
+.dh-dice-quickBets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 0 14px;
+}
+
+.dh-dice-chip {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: #eef2ff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dh-dice-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dh-dice-resultBadge {
+  margin-top: 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.dh-dice-resultBadge.is-ready {
+  background: rgba(255,255,255,0.06);
+}
+
+.dh-dice-resultBadge.is-win {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.dh-dice-resultBadge.is-loss {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.24);
+}
+
+.dh-dice-resultGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dh-dice-resultCard {
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.dh-dice-resultCard span {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.68;
+  margin-bottom: 6px;
+}
+
+.dh-dice-resultCard b {
+  font-size: 18px;
+}
+
+.dh-dice-resultCard.is-win {
+  border-color: rgba(34, 197, 94, 0.28);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.dh-dice-resultCard.is-loss {
+  border-color: rgba(239, 68, 68, 0.22);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.dh-dice-tokenRow.is-usdc {
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.08);
+}
+
+.dh-dice-tokenRow.is-avax {
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.08);
+}
+
+@media (max-width: 860px) {
+  .dh-dice-resultGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .dh-dice-resultGrid {
+    grid-template-columns: 1fr;
+  }
+}

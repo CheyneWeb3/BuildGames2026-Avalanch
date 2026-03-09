@@ -1,0 +1,100 @@
+{
+  "1": {
+    "name": "Ethereum",
+    "rpcHttp": "https://ethereum-rpc.publicnode.com",
+    "wNative": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "dexV2": {
+      "factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+      "router": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+    }
+  },
+
+  "10": {
+    "name": "OP Mainnet",
+    "rpcHttp": "https://optimism-rpc.publicnode.com",
+    "wNative": "0x4200000000000000000000000000000000000006",
+    "usdc": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+    "dexV2": {
+      "factory": "0x0c3c1c532F1e39EdF36BE9Fe0bE1410313E074Bf",
+      "router": "0x4A7b5Da61326A6379179b40d00F57E5bbDC962c2"
+    }
+  },
+
+  "56": {
+    "name": "BSC",
+    "rpcHttp": "https://bsc-rpc.publicnode.com",
+    "wNative": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    "usdc": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    "dexV2": {
+      "factory": "0xca143ce32fe78f1f7019d7d551a6402fc5350c73",
+      "router": "0x10ED43C718714eb63d5aA57B78B54704E256024E"
+    }
+  },
+
+  "137": {
+    "name": "Polygon",
+    "rpcHttp": "https://polygon-bor-rpc.publicnode.com",
+    "wNative": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    "usdc": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    "dexV2": {
+      "factory": "0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C",
+      "router": "0xedf6066a2b290C185783862C7F4776A2C8077AD1"
+    }
+  },
+
+  "42161": {
+    "name": "Arbitrum",
+    "rpcHttp": "https://arbitrum-one-rpc.publicnode.com",
+    "wNative": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "usdc": "0xAF88d065e77c8cC2239327C5EDb3A432268e5831",
+    "dexV2": {
+      "factory": "0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9",
+      "router": "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24"
+    }
+  },
+
+  "42220": {
+    "name": "Celo",
+    "rpcHttp": "https://celo-rpc.publicnode.com",
+    "wNative": "0x471EcE3750Da237f93B8E339c536989b8978a438",
+    "usdc": "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
+    "dexV2": {
+      "factory": "0x62d5b84be28a183abb507e125b384122d2c25fae",
+      "router": "0xe3d8bd6aed4f159bc8000a9cd47cffdb95f96121"
+    }
+  },
+
+  "43114": {
+    "name": "Avalanche",
+    "rpcHttp": "https://avalanche-c-chain-rpc.publicnode.com",
+    "wNative": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    "usdc": "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664",
+    "dexV2": {
+      "factory": "0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C",
+      "router": "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24"
+    }
+  },
+
+  "8453": {
+    "name": "Base",
+    "rpcHttp": "https://mainnet.base.org",
+    "wNative": "0x4200000000000000000000000000000000000006",
+    "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bDa02913",
+    "dexV2": {
+      "factory": "0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6",
+      "router": "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24"
+    }
+  },
+
+  "59144": {
+    "name": "Linea",
+    "rpcHttp": "https://linea-rpc.publicnode.com",
+    "wNative": "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f",
+    "usdc": "0x176211869cA2b568f2A7D4EE941E073a821EE1ff",
+    "dexV2": {
+      "factory": "",
+      "router": ""
+    }
+  }
+}
