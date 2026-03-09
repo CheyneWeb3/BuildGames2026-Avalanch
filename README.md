@@ -77,6 +77,61 @@ It is being presented as a **cashier layer for applications**, with the dice pag
 
 ---
 
+## Core Product Thesis
+
+The Haus Cashier is not limited to one frontend, one game, or one social app.
+
+It is a reusable system that can sit between:
+
+* wallet-backed user funds
+* application-facing balances
+* gameplay and reward logic
+* social account usage
+* administrative and operational tools
+* future SDK or integration layers
+
+That makes it useful for builders who want to create web3 applications without redesigning deposits, balances, spend logic, rewards, withdrawals, and notifications from scratch every time.
+
+---
+
+## Primary MVP Flow: Wallet-First Dapp Experience
+
+The main review path for judges is the web dapp experience.
+
+- **Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
+- **Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
+
+### User flow
+
+1. The user opens the dapp.
+2. The user connects a wallet on Avalanche Fuji.
+3. The user funds into the cashier-supported flow.
+4. The user gains an application-usable balance.
+5. The user visits the dice page.
+6. The user authorizes interaction through web3 signing.
+7. The user plays using credited cashier balance.
+8. Wins and losses settle against that balance.
+9. The user can withdraw when needed.
+
+This is important because it shows how web3 games and interactive applications can feel more usable while still remaining wallet-rooted and Avalanche-connected.
+
+---
+
+## Why Avalanche
+
+Avalanche is a strong fit for The Haus Cashier because it enables responsive user-facing applications that still retain real web3 value flow and contract-connected logic.
+
+This MVP is built on **Avalanche Fuji** to demonstrate:
+
+* live wallet-connected usage
+* testable web3 application flow
+* support for onchain-backed balances and logic
+* a credible path from funding to application usage to withdrawal
+
+The Haus is meant to support practical user-facing products, and Avalanche provides an environment where those products can feel fast enough and usable enough to matter.
+
+---
+
 
 ## The Problem
 
@@ -128,58 +183,7 @@ A Telegram bot integration showing that the same cashier system can also power a
 
 ---
 
-## Why Avalanche
-
-Avalanche is a strong fit for The Haus Cashier because it enables responsive user-facing applications that still retain real web3 value flow and contract-connected logic.
-
-This MVP is built on **Avalanche Fuji** to demonstrate:
-
-* live wallet-connected usage
-* testable web3 application flow
-* support for onchain-backed balances and logic
-* a credible path from funding to application usage to withdrawal
-
-The Haus is meant to support practical user-facing products, and Avalanche provides an environment where those products can feel fast enough and usable enough to matter.
-
----
 
 
-## Core Product Thesis
-
-The Haus Cashier is not limited to one frontend, one game, or one social app.
-
-It is a reusable system that can sit between:
-
-* wallet-backed user funds
-* application-facing balances
-* gameplay and reward logic
-* social account usage
-* administrative and operational tools
-* future SDK or integration layers
-
-That makes it useful for builders who want to create web3 applications without redesigning deposits, balances, spend logic, rewards, withdrawals, and notifications from scratch every time.
-
----
-
-## Primary MVP Flow: Wallet-First Dapp Experience
-
-The main review path for judges is the web dapp experience.
-
-- **Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
-- **Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
-
-### User flow
-
-1. The user opens the dapp.
-2. The user connects a wallet on Avalanche Fuji.
-3. The user funds into the cashier-supported flow.
-4. The user gains an application-usable balance.
-5. The user visits the dice page.
-6. The user authorizes interaction through web3 signing.
-7. The user plays using credited cashier balance.
-8. Wins and losses settle against that balance.
-9. The user can withdraw when needed.
-
-This is important because it shows how web3 games and interactive applications can feel more usable while still remaining wallet-rooted and Avalanche-connected.
 
 ---
