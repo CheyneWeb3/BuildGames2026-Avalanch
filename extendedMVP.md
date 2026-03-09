@@ -656,6 +656,4 @@ That is the direction this MVP is built to demonstrate.
 
 ---
 
-This is the thorough version.
-
 The next best move is to turn this into a **clean final README markdown version with tighter formatting, callout boxes, and image placeholder layout** so you can paste it straight into GitHub without doing cleanup yourself.
