@@ -92,6 +92,9 @@ It is a reusable system that can sit between:
 
 That makes it useful for builders who want to create web3 applications without redesigning deposits, balances, spend logic, rewards, withdrawals, and notifications from scratch every time.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/servervisual.png" alt="The Haus Server Visualisation" width="900" />
+</p>
 
 ---
 
