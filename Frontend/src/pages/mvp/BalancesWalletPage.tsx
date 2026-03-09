@@ -654,6 +654,8 @@ export default function UserWalletPage() {
   const [sendOpen, setSendOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
+  const sessionGateOpen = !isConnected || !authed;
+
   // deposit/withdraw state
   const [amountStr, setAmountStr] = useState<string>("0.01");
   const [useNative, setUseNative] = useState<boolean>(true);
@@ -2481,6 +2483,45 @@ export default function UserWalletPage() {
           </div>
         </div>
       ) : null}
+
+      {/* ===== Session gate modal ===== */}
+      <Modal
+        open={sessionGateOpen}
+        title="Session required"
+        onClose={() => {}}
+        footer={
+          <div className="cw-modalBtns">
+            <MiniBtn kind="primary" onClick={connectWallet} disabled={busy || isConnected}>
+              {isConnected ? "Wallet connected" : "Connect wallet"}
+            </MiniBtn>
+            <MiniBtn
+              kind="primary"
+              onClick={loginWithWallet}
+              disabled={busy || !walletProvider || !isConnected || authed}
+            >
+              {authed ? "Session signed" : "Sign session"}
+            </MiniBtn>
+          </div>
+        }
+      >
+        <div className="cw-form">
+          <div className="cw-help" style={{ fontSize: 16, fontWeight: 800 }}>
+            connect and sign session to continue
+          </div>
+          <div className="cw-help">
+            {!isConnected
+              ? "Connect your wallet first, then sign the session."
+              : authed
+              ? "Session is ready."
+              : "Wallet connected. Sign the session to continue."}
+          </div>
+          {(account || appkitAddress) ? (
+            <div className="cw-help">
+              Wallet: <span className="cw-mono">{account || appkitAddress}</span>
+            </div>
+          ) : null}
+        </div>
+      </Modal>
 
       {/* ===== Account modal ===== */}
       <Modal
