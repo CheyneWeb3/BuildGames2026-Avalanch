@@ -92,7 +92,9 @@ It is a reusable system that can sit between:
 
 That makes it useful for builders who want to create web3 applications without redesigning deposits, balances, spend logic, rewards, withdrawals, and notifications from scratch every time.
 
+
 ---
+
 
 ## Primary MVP Flow: Wallet-First Dapp Experience
 
@@ -117,6 +119,7 @@ This is important because it shows how web3 games and interactive applications c
 
 ---
 
+
 ## Why Avalanche
 
 Avalanche is a strong fit for The Haus Cashier because it enables responsive user-facing applications that still retain real web3 value flow and contract-connected logic.
@@ -131,6 +134,7 @@ This MVP is built on **Avalanche Fuji** to demonstrate:
 The Haus is meant to support practical user-facing products, and Avalanche provides an environment where those products can feel fast enough and usable enough to matter.
 
 ---
+
 
 
 ## The Problem
@@ -154,7 +158,16 @@ Developers need a way to preserve wallet-backed value and onchain trust while al
 
 That is the role of The Haus Cashier.
 
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/probs.png" alt="Current Issue in Web3" width="900" />
+</p>
+
+
 ---
+
+
 
 ## The Solution
 
@@ -181,6 +194,11 @@ A wallet-first dapp experience where users can connect, fund, use credited balan
 
 A Telegram bot integration showing that the same cashier system can also power account linking, notifications, balances, administrative functions, and balance-backed interactions on a social platform.
 
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/solutionTheHaus.png" alt="The Haus Payment Solutions" width="900" />
+</p>
 ---
 
 
