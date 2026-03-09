@@ -20,7 +20,7 @@ The core idea is simple:
 - **Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
 - **Telegram Bot:** [@TheHausAvaxFujiMvpBot](https://t.me/TheHausAvaxFujiMvpBot)
 - **Telegram Community Group:** [Join Telegram Group](https://t.me/+q7Y7PCTU3DI4YWM9)
-- **Demo Video:** [PASTE_VIDEO_URL_HERE](Updating Soon)
+- **Demo Video:** (Updating Soon)
 
 ---
 
@@ -656,4 +656,3 @@ That is the direction this MVP is built to demonstrate.
 
 ---
 
-The next best move is to turn this into a **clean final README markdown version with tighter formatting, callout boxes, and image placeholder layout** so you can paste it straight into GitHub without doing cleanup yourself.
