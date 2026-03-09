@@ -1,4 +1,5 @@
-# The Haus Cashier
+# The Haus 
+### Payment and Cashier Rail
 
 **A modular cashier, balance, and spend system for Avalanche applications, games, and social platforms.**
 
