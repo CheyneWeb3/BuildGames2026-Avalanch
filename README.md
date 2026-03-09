@@ -199,7 +199,7 @@ A Telegram bot integration showing that the same cashier system can also power a
 <p align="center">
   <img src="https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/solutionTheHaus.png" alt="The Haus Payment Solutions" width="900" />
 </p>
----
+
 
 
 
