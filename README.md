@@ -25,6 +25,7 @@ The core idea is simple:
 - **Telegram Bot Cashier Spend Demonstration:** [@TheHausAvaxFujiMvpBot](https://t.me/TheHausAvaxFujiMvpBot)
 - **Telegram Community Group:** [Join Telegram Group](https://t.me/+q7Y7PCTU3DI4YWM9)
 - **Round 2 MVP Video Presentation:** [https://youtu.be/XhCs-H9twhQ?si=OQl6ZWc62XvYSLFx](https://youtu.be/XhCs-H9twhQ?si=OQl6ZWc62XvYSLFx)
+- **Round 1 Presentation Video:** [https://www.youtube.com/watch?v=8u3g21UKsr0](https://www.youtube.com/watch?v=8u3g21UKsr0)
 - **Vault Contract:** [https://testnet.routescan.io/address/0x49D0c30A6C48A1dB80eFf65ffF0083A389a94dab/contract/43113/code](https://testnet.routescan.io/address/0x49D0c30A6C48A1dB80eFf65ffF0083A389a94dab/contract/43113/code)
 - **Vault Transactions :** [0x49d0c30a6c48a1db80eff65fff0083a389a94dab](https://testnet.snowscan.xyz/address/0x49d0c30a6c48a1db80eff65fff0083a389a94dab)
 - **Raw API Docs** [openapi.json](https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/api-docs/openapi.json)
