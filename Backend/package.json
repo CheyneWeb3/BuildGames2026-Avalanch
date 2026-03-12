@@ -1,0 +1,21 @@
+{
+  "name": "hauscashier-system",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "modules/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build:ordered",
+    "dev": "npm -ws run dev",
+    "lint": "npm -ws run lint",
+    "typecheck": "echo 'typecheck optional'",
+    "build:ordered": "npm -w @hauscashier/common run build && npm -w @hauscashier/module-dice run build && npm -w @hauscashier/module-lottery run build && npm -w @hauscashier/module-whack run build && npm -w @hauscashier/module-saas run build && npm -w @hauscashier/module-tg run build && npm -w @hauscashier/core-api run build && npm -w @hauscashier/indexer run build && npm -w @hauscashier/relayer run build && npm -w @hauscashier/tg-bot run build && npm -w @hauscashier/web run build && npm -w tunnel run build"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
