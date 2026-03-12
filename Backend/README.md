@@ -1,7 +1,3 @@
-haus## Environment mode
-
-This working copy is prepared as a **Fuji-only testnet MVP baseline**. Keep testnet and mainnet restores separate.
-
 # HausCashier System (AVAX-FUJI MVP) — Core API + Relayer + Indexer + Telegram Module
 
 You asked for a **proper enterprise-style split**:
@@ -196,10 +192,11 @@ No core rewrites required.
 
 ---
 
-## Next upgrades (when you say go)
+## Next upgrades
 
 - Multi-relayer quorum (N-of-M)
 - Vault intent signing policy upgrades (operator set rotation, multi-sig approvals, etc.)
 - CCIP full flow (bridge request + fee quoting + dest crediting policy)
 - Per-module risk limits + circuit breakers
 - Websocket event streaming
+- SDK for external connections
