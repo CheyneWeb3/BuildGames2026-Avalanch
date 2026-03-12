@@ -30,6 +30,11 @@ The core idea is simple:
 - **Raw API Docs** [openapi.json](https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/api-docs/openapi.json)
 
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=XhCs-H9twhQ">
+    <img src="https://img.youtube.com/vi/XhCs-H9twhQ/hqdefault.jpg" alt="Watch the video">
+  </a>
+</p>
 ---   
 
 ## Overview
