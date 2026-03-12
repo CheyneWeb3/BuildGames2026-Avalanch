@@ -22,14 +22,14 @@ ENABLE_TG_LINKING=1
 
 # TG session-withdraw feature (server-side intent signing)
 ENABLE_TG_SESSION_WITHDRAW=1
-SESSION_KEY_ENC_SECRET=REPLACE_ME_HEX_32_BYTES
+SESSION_KEY_ENC_SECRET=
 WITHDRAW_FEE_BPS=50
 FEE_TREASURY_ID=fees
 TG_SESSION_TOKEN_LIMITS_JSON={}
 
 # TG admin IDs (used by admin-gated core endpoints / modules)
-TG_SUPER_ADMIN_IDS=1531812291
-TG_ADMIN_IDS=1531812291,679907167,1270180667
+TG_SUPER_ADMIN_IDS=
+TG_ADMIN_IDS=
 
 # Enable modules (core mounts routes behind these)
 ENABLE_GAME_DICE=1
@@ -42,12 +42,12 @@ ENABLE_GAME_WHACK=0
 # Fees payout (internal credits move from treasury:fees => user:<wallet>)
 # -------------------------
 # This is NOT your relayer shared key. It's a separate admin key for /admin/fees/payout/*
-FEE_PAYOUT_ADMIN_KEY=REPLACE_ME_LONG_RANDOM
+FEE_PAYOUT_ADMIN_KEY=
 
 # Optional sweep-to-wallet (on-chain sweep feature) — only if you still use it
 FEE_SWEEP_OWNER_WALLET=0x18Ff7f454B6A3233113f51030384F49054DD27BF
 # Fuji-only MVP baseline. Do not mix mainnet + testnet in one restore.
-FEE_SWEEP_TO=0xB1447E259986Aa4DE0CAB6413DD207B8b993346c
+FEE_SWEEP_TO=
 FEE_SWEEP_CHAIN_ID=43113
 FEE_SWEEP_VAULT_ID=fuji-hauscashier-v3
 FEE_SWEEP_DEADLINE_SECS=1800
