@@ -1,0 +1,2609 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Haus Cashier Core API",
+    "version": "0.1.0",
+    "description": "Generated from the uploaded FUJIMVP server zip by tracing services/core-api/src/http/routes.ts. Schemas are intentionally broad where the route file uses ad-hoc request bodies."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8088"
+    }
+  ],
+  "security": [],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Wallet JWT from /auth/verify"
+      },
+      "tgBearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Telegram JWT from /auth/tg/verify"
+      },
+      "moduleAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-module-key",
+        "description": "Use with x-module-id header"
+      },
+      "relayerAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-relayer-key"
+      },
+      "indexerAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-indexer-key"
+      },
+      "adminKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-admin-key"
+      }
+    },
+    "parameters": {
+      "xModuleIdHeader": {
+        "name": "x-module-id",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "xModuleKeyHeader": {
+        "name": "x-module-key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Public"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "User"
+    },
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Telegram"
+    },
+    {
+      "name": "Modules"
+    },
+    {
+      "name": "Vault"
+    },
+    {
+      "name": "Relayer"
+    },
+    {
+      "name": "Indexer"
+    }
+  ],
+  "paths": {
+    "/config/public": {
+      "get": {
+        "summary": "Get public system configuration",
+        "tags": [
+          "Public"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/prices/enabled": {
+      "get": {
+        "summary": "Get cached USD prices for enabled tokens",
+        "tags": [
+          "Public"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/token-prices/enabled": {
+      "get": {
+        "summary": "Alias of /prices/enabled",
+        "tags": [
+          "Public"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/vault/config": {
+      "get": {
+        "summary": "Get enabled token configuration for a vault",
+        "tags": [
+          "Public"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "vaultId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/auth/nonce": {
+      "post": {
+        "summary": "Create login nonce for wallet auth",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "address"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify": {
+      "post": {
+        "summary": "Verify signed login message and issue wallet JWT",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "address",
+                  "signature"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/tg/verify": {
+      "post": {
+        "summary": "Verify Telegram Mini App initData and issue TG JWT",
+        "tags": [
+          "Auth",
+          "Telegram"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "moduleId": {
+                    "type": "string"
+                  },
+                  "initData": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "initData"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tg/auth/verify": {
+      "post": {
+        "summary": "Alias of /auth/tg/verify",
+        "tags": [
+          "Auth",
+          "Telegram"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "moduleId": {
+                    "type": "string"
+                  },
+                  "initData": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "initData"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tg/me/balances": {
+      "get": {
+        "summary": "Get Telegram-linked or TG-holding balances",
+        "tags": [
+          "Telegram"
+        ],
+        "security": [
+          {
+            "tgBearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/tg/me/ledger": {
+      "get": {
+        "summary": "Get Telegram-linked ledger items",
+        "tags": [
+          "Telegram"
+        ],
+        "security": [
+          {
+            "tgBearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/tg/me/transfer": {
+      "post": {
+        "summary": "Transfer credits from TG-linked account",
+        "tags": [
+          "Telegram"
+        ],
+        "security": [
+          {
+            "tgBearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refId": {
+                    "type": "string"
+                  },
+                  "chainId": {
+                    "type": "integer"
+                  },
+                  "asset": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "refId",
+                  "chainId",
+                  "asset",
+                  "to",
+                  "amount"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/balances": {
+      "get": {
+        "summary": "Get wallet user balances",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/me/withdraw/quote": {
+      "post": {
+        "summary": "Quote withdraw fee and net amount",
+        "tags": [
+          "User",
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "chainId": {
+                    "type": "integer"
+                  },
+                  "vaultId": {
+                    "type": "string"
+                  },
+                  "debitRaw": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "chainId",
+                  "vaultId",
+                  "debitRaw"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/withdraw/typedData": {
+      "post": {
+        "summary": "Get EIP-712 typed data for withdraw signing",
+        "tags": [
+          "User",
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "chainId": {
+                    "type": "integer"
+                  },
+                  "vaultId": {
+                    "type": "string"
+                  },
+                  "isNative": {
+                    "type": "boolean"
+                  },
+                  "token": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "debitRaw": {
+                    "type": "string"
+                  },
+                  "deadline": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "chainId",
+                  "vaultId",
+                  "to",
+                  "debitRaw"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/ledger": {
+      "get": {
+        "summary": "Get wallet user ledger entries",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/me/tx/track": {
+      "post": {
+        "summary": "Track a client-side tx hash for later indexing",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/me/tx/status": {
+      "get": {
+        "summary": "Get tracked tx status and matching indexed events",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "txHash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/me/tg/link/confirm": {
+      "post": {
+        "summary": "Confirm TG link code from wallet side",
+        "tags": [
+          "User",
+          "Telegram"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/me/tg/link/status": {
+      "get": {
+        "summary": "Check TG links for current wallet",
+        "tags": [
+          "User",
+          "Telegram"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/me/session/register/typedData": {
+      "post": {
+        "summary": "Create typed data for session key registration",
+        "tags": [
+          "User",
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/me/session/config/typedData": {
+      "post": {
+        "summary": "Create typed data for session token limit config",
+        "tags": [
+          "User",
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/modules/register": {
+      "post": {
+        "summary": "Register or rotate a module API key",
+        "tags": [
+          "Admin",
+          "Modules"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/treasuries/create": {
+      "post": {
+        "summary": "Create treasury metadata record",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/fees/sweep/preview": {
+      "post": {
+        "summary": "Preview fee treasury sweep",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/fees/sweep/run": {
+      "post": {
+        "summary": "Run fee treasury sweep",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/fees/payout/preview": {
+      "post": {
+        "summary": "Preview internal payout of fee treasury to wallet",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/fees/payout/run": {
+      "post": {
+        "summary": "Run internal payout of fee treasury to wallet",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/accounting/balances": {
+      "get": {
+        "summary": "List balances by account or prefix",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/accounting/ledger": {
+      "get": {
+        "summary": "List ledger by account or prefix",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/solvency/vault": {
+      "get": {
+        "summary": "Compare on-chain vault balances vs credited ledger balances",
+        "tags": [
+          "Admin",
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/ledger/transfer": {
+      "post": {
+        "summary": "Module-authenticated ledger transfer",
+        "tags": [
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/link/request": {
+      "post": {
+        "summary": "Create TG link code",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/link/pending": {
+      "post": {
+        "summary": "Check pending TG link request",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/link/approve": {
+      "post": {
+        "summary": "Approve and finalize TG link",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/link/cancel": {
+      "post": {
+        "summary": "Cancel TG link code(s)",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/welcome/set": {
+      "post": {
+        "summary": "Set Telegram welcome message",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/welcome/get": {
+      "post": {
+        "summary": "Get Telegram welcome message",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/maintenance/get": {
+      "post": {
+        "summary": "Get TG maintenance mode",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/maintenance/set": {
+      "post": {
+        "summary": "Set TG maintenance mode",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/success_media/get": {
+      "post": {
+        "summary": "Get configured TG success media",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/success_media/set": {
+      "post": {
+        "summary": "Set configured TG success media",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/welcome/show": {
+      "post": {
+        "summary": "Show welcome content if not already seen",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/seen/touch": {
+      "post": {
+        "summary": "Touch/update TG seen-user record",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/seen/resolve": {
+      "post": {
+        "summary": "Resolve TG user by tgId or username",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/seen/list": {
+      "post": {
+        "summary": "List recently seen TG users",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/activity/log": {
+      "post": {
+        "summary": "Log TG chat activity",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/activity/list": {
+      "post": {
+        "summary": "List TG chat activity",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/alerts/get": {
+      "post": {
+        "summary": "Get TG DM alert preference",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/alerts/set": {
+      "post": {
+        "summary": "Set TG DM alert preference",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/notify/pull": {
+      "post": {
+        "summary": "Pull pending TG notifications",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/notify/ack": {
+      "post": {
+        "summary": "Acknowledge TG notifications as sent",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/token/resolve": {
+      "post": {
+        "summary": "Resolve user token/symbol against enabled chain tokens",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/balances": {
+      "post": {
+        "summary": "Get balances for TG-linked account",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/treasuries/list": {
+      "post": {
+        "summary": "List module treasuries and balances",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/treasuries/admin/list": {
+      "post": {
+        "summary": "Admin list all treasury balances on a chain",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/treasuries/admin/transfer": {
+      "post": {
+        "summary": "Admin move credits between linked wallet and treasury",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/ledger/transfer": {
+      "post": {
+        "summary": "Bot/module TG ledger transfer",
+        "tags": [
+          "Telegram",
+          "Modules"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/session/withdraw": {
+      "post": {
+        "summary": "Create TG session-signed withdraw intent",
+        "tags": [
+          "Telegram",
+          "Modules",
+          "Vault"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/modules/{moduleId}/tg/session/withdrawall": {
+      "post": {
+        "summary": "Create TG session-signed withdraw-all intents",
+        "tags": [
+          "Telegram",
+          "Modules",
+          "Vault"
+        ],
+        "security": [
+          {
+            "moduleAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xModuleIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/xModuleKeyHeader"
+          },
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/vault/intents/withdraw": {
+      "post": {
+        "summary": "Create escrowed wallet-signed withdraw intent",
+        "tags": [
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/vault/intents/session/register": {
+      "post": {
+        "summary": "Create session registration intent",
+        "tags": [
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/vault/intents/session/config": {
+      "post": {
+        "summary": "Create session token config intent(s)",
+        "tags": [
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/me/vault/intents": {
+      "get": {
+        "summary": "List current user's vault intents",
+        "tags": [
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/me/vault/intents/{refId}/retry": {
+      "post": {
+        "summary": "Retry failed vault intent for current user",
+        "tags": [
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "refId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/me/vault/intents/{refId}/cancel": {
+      "post": {
+        "summary": "Cancel user vault intent (disabled)",
+        "tags": [
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "refId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Cancel disabled"
+          }
+        }
+      }
+    },
+    "/admin/vault/intents/{refId}/retry": {
+      "post": {
+        "summary": "Admin retry failed vault intent",
+        "tags": [
+          "Admin",
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "refId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/admin/vault/intents/{refId}/cancel": {
+      "post": {
+        "summary": "Admin cancel failed escrowed vault intent",
+        "tags": [
+          "Admin",
+          "Vault"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "refId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/relayer/intents": {
+      "get": {
+        "summary": "List relayer intents by status",
+        "tags": [
+          "Relayer"
+        ],
+        "security": [
+          {
+            "relayerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/relayer/intents/{intentId}/mark": {
+      "post": {
+        "summary": "Mark relayer intent submitted/confirmed/failed",
+        "tags": [
+          "Relayer"
+        ],
+        "security": [
+          {
+            "relayerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "intentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/me/events": {
+      "get": {
+        "summary": "Get indexed chain events relevant to the current wallet",
+        "tags": [
+          "User",
+          "Indexer"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/internal/indexer/event": {
+      "post": {
+        "summary": "Indexer ingests raw chain event",
+        "tags": [
+          "Indexer"
+        ],
+        "security": [
+          {
+            "indexerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "409": {
+            "description": "Duplicate"
+          }
+        }
+      }
+    }
+  }
+}
