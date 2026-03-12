@@ -48,9 +48,15 @@ modules/tg                 Telegram commands module (drop-in pattern)
 
 **Important:** Telegram auth alone does **not** produce a withdraw signature. TG can *trigger* the UI, but the withdraw still needs the user wallet signature (or a future “session key” feature).
 
-### ✅ Telegram as a module
+### ✅ Telegram as an Auth and module
 - Telegram commands live in `modules/tg`.
 - The Telegram bot service (`services/tg-bot`) authenticates to Core API as a module (not as an admin).
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/servervisual.png" alt="The Haus Server Visualisation" width="900" />
+</p>
+
+
 
 ---
 
