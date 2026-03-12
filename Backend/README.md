@@ -1,4 +1,4 @@
-# HausCashier System (AVAX-FUJI MVP) — Core API + Relayer + Indexer + Telegram Module
+# HausCashier System (AVAX-FUJI MVP) — Core API + Relayer + Indexer
 
 You asked for a **proper enterprise-style split**:
 - **Core API** handles: auth, credits ledger, user balances, module registry, intents, and public endpoints for miniapps/dapps.
