@@ -19,8 +19,10 @@ The core idea is simple:
 ## Quick Links
 
 - **Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
-- **Dice Demo:** [Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
-- **Telegram Bot:** [@TheHausAvaxFujiMvpBot](https://t.me/TheHausAvaxFujiMvpBot)
+
+- **Signed wallet session demonstration Dice Demo:** [SIWE Spend w/out tx Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
+- **Google Auth session demonstration Dice Demo:** [Google Auth Spend w/out tx Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/googledice)
+- **Telegram Bot Cashier Spend Demonstration:** [@TheHausAvaxFujiMvpBot](https://t.me/TheHausAvaxFujiMvpBot)
 - **Telegram Community Group:** [Join Telegram Group](https://t.me/+q7Y7PCTU3DI4YWM9)
 - **Demo Video:** [https://youtu.be/XhCs-H9twhQ?si=OQl6ZWc62XvYSLFx](https://youtu.be/XhCs-H9twhQ?si=OQl6ZWc62XvYSLFx)
 - **Vault Contract:** [https://testnet.routescan.io/address/0x49D0c30A6C48A1dB80eFf65ffF0083A389a94dab/contract/43113/code](https://testnet.routescan.io/address/0x49D0c30A6C48A1dB80eFf65ffF0083A389a94dab/contract/43113/code)
