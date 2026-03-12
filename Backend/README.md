@@ -16,7 +16,7 @@ You asked for a **proper enterprise-style split**:
 ```
 packages/common            Shared types + Zod config schema
 services/core-api          Main API (NO private keys)
-services/relayer           Vault transaction sender (HOLDS the hot key)
+services/relayer           Vault transaction sender (HOLDS the encrypted key in dev mode production use relayer validators with quarom)
 services/indexer           Vault log watcher (NO private keys)
 services/tg-bot            Telegram runner (uses module API)
 modules/tg                 Telegram commands module (drop-in pattern)
