@@ -13,6 +13,7 @@ Over time, The Haus can grow into infrastructure that powers browser apps, spend
 ## Supporting Documents / Links
 
 See Readme.md
+
 ---
 
 ## Milestones & Roadmap
