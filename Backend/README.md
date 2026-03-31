@@ -1,4 +1,4 @@
-# HausCashier System (AVAX-FUJI MVP) — Core API + Relayer + Indexer + Telegram Module
+# HausCashier System (AVAX-FUJI MVP) — Core API + Relayer + Indexer
 
 You asked for a **proper enterprise-style split**:
 - **Core API** handles: auth, credits ledger, user balances, module registry, intents, and public endpoints for miniapps/dapps.
@@ -16,7 +16,7 @@ You asked for a **proper enterprise-style split**:
 ```
 packages/common            Shared types + Zod config schema
 services/core-api          Main API (NO private keys)
-services/relayer           Vault transaction sender (HOLDS the hot key)
+services/relayer           Vault transaction sender (HOLDS the encrypted key in dev mode production use relayer validators with quarom)
 services/indexer           Vault log watcher (NO private keys)
 services/tg-bot            Telegram runner (uses module API)
 modules/tg                 Telegram commands module (drop-in pattern)
@@ -48,9 +48,15 @@ modules/tg                 Telegram commands module (drop-in pattern)
 
 **Important:** Telegram auth alone does **not** produce a withdraw signature. TG can *trigger* the UI, but the withdraw still needs the user wallet signature (or a future “session key” feature).
 
-### ✅ Telegram as a module
+### ✅ Telegram as an Auth and module
 - Telegram commands live in `modules/tg`.
 - The Telegram bot service (`services/tg-bot`) authenticates to Core API as a module (not as an admin).
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/CheyneWeb3/BuildGames2026-Avalanch/refs/heads/main/Files/Assets/servervisual.png" alt="The Haus Server Visualisation" width="900" />
+</p>
+
+
 
 ---
 
