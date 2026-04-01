@@ -16,10 +16,55 @@ import {
   getChainById,
 } from "../../config";
 import "./UserWalletPage.css";
-
+import GoogleWalletLinkButton from "../../components/GoogleWalletLinkButton";
 const LS_JWT = "haus_user_jwt";
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
 
+
+
+function decodeJwtPayload(token?: string): any | null {
+  try {
+    const payload = String(token || "").split(".")[1];
+    if (!payload) return null;
+    return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch {
+    return null;
+  }
+}
+
+function jwtLooksGoogleLinked(token?: string) {
+  const p = decodeJwtPayload(token);
+  if (!p || typeof p !== "object") return false;
+
+  const directFlags = [
+    p.googleLinked,
+    p.google_linked,
+    p.hasGoogle,
+    p.has_google,
+    p.googleConnected,
+    p.google_connected,
+  ];
+
+  if (directFlags.some(Boolean)) return true;
+
+  const providerish = [
+    p.provider,
+    p.authProvider,
+    p.auth_provider,
+    p.loginProvider,
+    p.login_provider,
+    p.idp,
+  ]
+    .map((x: any) => String(x || "").toLowerCase().trim())
+    .filter(Boolean);
+
+  if (providerish.some((x: string) => x.includes("google"))) return true;
+
+  const email = String(p.email || "").toLowerCase().trim();
+  const googleSub = String(p.googleSub || p.google_sub || "").trim();
+
+  return !!email || !!googleSub;
+}
 /** ===== ABIs (minimal) ===== */
 const VAULT_READ_ABI = [
   "function usdc() view returns (address)",
@@ -592,6 +637,23 @@ export default function UserWalletPage() {
 
   const authHeaders = useMemo(() => (jwt ? { Authorization: `Bearer ${jwt}` } : {}), [jwt]);
 
+
+
+  const [googleLinkedUi, setGoogleLinkedUi] = useState<boolean>(false);
+  const [googleLinkedInfo, setGoogleLinkedInfo] = useState<{
+    wallet?: string;
+    googleSub?: string;
+    email?: string;
+  } | null>(null);
+
+
+  const tgRegisterPageUrl = useMemo(() => {
+    if (typeof window === "undefined") return "/#/tg/register";
+    return `${window.location.origin}/#/tg/register`;
+  }, []);
+
+
+
   /** ===== Data ===== */
   const [pub, setPub] = useState<PublicConfig | null>(null);
   const [tokenList, setTokenList] = useState<TokenList | null>(null);
@@ -624,6 +686,12 @@ export default function UserWalletPage() {
     linkCount?: number;
   } | null>(null);
 
+  const walletConnectedNow = !!(isConnected && (account || appkitAddress));
+  const sessionSignedNow = !!authed;
+  const telegramLinkedNow = !!regStatus?.tgBound;
+  const googleLinkedNow = !!googleLinkedUi;
+
+
   // Wallet balances for deposit modal
   const [walletTokenBalRaw, setWalletTokenBalRaw] = useState<string>("0");
   const [walletNativeBalRaw, setWalletNativeBalRaw] = useState<string>("0");
@@ -654,6 +722,7 @@ export default function UserWalletPage() {
   const [sendOpen, setSendOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
+
   const sessionGateOpen = !isConnected || !authed;
 
   // deposit/withdraw state
@@ -676,6 +745,10 @@ export default function UserWalletPage() {
     mq.addEventListener?.("change", on);
     return () => mq.removeEventListener?.("change", on);
   }, []);
+
+
+
+
 
   /** ===== Load static files ===== */
   useEffect(() => {
@@ -1063,6 +1136,43 @@ export default function UserWalletPage() {
     }
   }
 
+
+  async function refreshGoogleLinkStatus(opts?: { silent?: boolean }) {
+    if (!jwt) {
+      setGoogleLinkedUi(false);
+      setGoogleLinkedInfo(null);
+      return;
+    }
+
+    try {
+      const out = await apiJson(apiBase, "/me/google/link/status", {
+        method: "GET",
+        headers: authHeaders as any,
+      });
+
+      const first = Array.isArray(out?.links) ? out.links[0] : null;
+      const linked = !!out?.linked && !!first;
+
+      setGoogleLinkedUi(linked);
+      setGoogleLinkedInfo(
+        linked
+          ? {
+              wallet: String(out?.ownerWallet || ""),
+              googleSub: String(first?.googleSub || ""),
+              email: String(first?.email || ""),
+            }
+          : null
+      );
+    } catch (e: any) {
+      setGoogleLinkedUi(false);
+      setGoogleLinkedInfo(null);
+      if (!opts?.silent) {
+        setToastMsg(e?.message ?? "Failed to load Google link status.");
+      }
+    }
+  }
+
+
   /** ===== USD pricing (multi-chain) via DEX V2 pairs ===== */
   function chainContractsForPricing(cid: number, chain?: PublicChain, vault?: PublicVault) {
     const key = String(cid);
@@ -1293,12 +1403,14 @@ export default function UserWalletPage() {
     refreshBalances({ silent: true }).catch(() => {});
     refreshLedgerAll({ silent: true }).catch(() => {});
     refreshRegistrationStatus({ silent: true }).catch(() => {});
+    refreshGoogleLinkStatus({ silent: true }).catch(() => {});
     refreshUsdPricesAll({ silent: true }).catch(() => {});
 
     const iv = window.setInterval(() => {
       refreshBalances({ silent: true }).catch(() => {});
       refreshLedgerAll({ silent: true }).catch(() => {});
       refreshRegistrationStatus({ silent: true }).catch(() => {});
+      refreshGoogleLinkStatus({ silent: true }).catch(() => {});
       refreshUsdPricesAll({ silent: true }).catch(() => {});
     }, 20000);
 
@@ -1444,6 +1556,9 @@ export default function UserWalletPage() {
     })();
   }, [depositOpen, walletProvider, account, depositTokenAddr]);
 
+  function openExternal(url: string) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
   /** ===== Wallet connect + auth ===== */
   function connectWallet() {
     open();
@@ -1506,6 +1621,7 @@ export default function UserWalletPage() {
       refreshBalances({ silent: true }).catch(() => {});
       refreshLedgerAll({ silent: true }).catch(() => {});
       refreshRegistrationStatus({ silent: true }).catch(() => {});
+      refreshGoogleLinkStatus({ silent: true }).catch(() => {});
       refreshUsdPricesAll({ silent: true }).catch(() => {});
     } catch (e: any) {
       setToastMsg(e?.message ?? "Sign in failed.");
@@ -1518,6 +1634,8 @@ export default function UserWalletPage() {
     localStorage.removeItem(LS_JWT);
     setJwt("");
     setRegStatus(null);
+    setGoogleLinkedUi(false);
+    setGoogleLinkedInfo(null);
     setExpandedActivity({});
     setToastMsg("Signed out.");
   }
@@ -2065,6 +2183,7 @@ export default function UserWalletPage() {
               refreshLedgerAll({ silent: true });
               refreshRegistrationStatus({ silent: true });
               refreshUsdPricesAll({ silent: true });
+              refreshGoogleLinkStatus({ silent: true });
             }}
             disabled={!authed}
           >
@@ -2530,6 +2649,22 @@ export default function UserWalletPage() {
         onClose={() => setAccountOpen(false)}
         footer={
           <div className="cw-modalBtns">
+            <MiniBtn
+              kind="ghost"
+              onClick={() => {
+                if (!authed) return setToastMsg("Sign in first.");
+                refreshBalances({ silent: true });
+                refreshLedgerAll({ silent: true });
+                refreshRegistrationStatus({ silent: true });
+                refreshGoogleLinkStatus({ silent: true });
+                refreshUsdPricesAll({ silent: true });
+                setToastMsg("Refreshed.");
+              }}
+              disabled={!authed || busy}
+            >
+              <Icon name="refresh" /> Refresh
+            </MiniBtn>
+
             <MiniBtn kind="ghost" onClick={() => setAccountOpen(false)} disabled={busy}>
               Close
             </MiniBtn>
@@ -2537,8 +2672,114 @@ export default function UserWalletPage() {
         }
       >
         <div className="cw-form">
+          <div className="cw-help" style={{ fontSize: 16, fontWeight: 900 }}>
+            Connection status
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 10,
+              marginTop: 8,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+                padding: "10px 12px",
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800 }}>Wallet</div>
+                <div style={{ opacity: 0.78, fontSize: 13 }}>
+                  {walletConnectedNow ? shortAddr(account || appkitAddress || "") : "Not connected"}
+                </div>
+              </div>
+              <div>{walletConnectedNow ? <Pill>Connected</Pill> : <span style={{ opacity: 0.8 }}>Not connected</span>}</div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+                padding: "10px 12px",
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800 }}>Session</div>
+                <div style={{ opacity: 0.78, fontSize: 13 }}>
+                  {sessionSignedNow ? "Wallet session active" : "Sign session required"}
+                </div>
+              </div>
+              <div>{sessionSignedNow ? <Pill>Signed in</Pill> : <span style={{ opacity: 0.8 }}>Not signed</span>}</div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+                padding: "10px 12px",
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800 }}>Google</div>
+                <div style={{ opacity: 0.78, fontSize: 13 }}>
+                  {googleLinkedNow
+                    ? googleLinkedInfo?.email
+                      ? `Linked · ${googleLinkedInfo.email}`
+                      : "Google linked"
+                    : "Not linked"}
+                </div>
+              </div>
+              <div>{googleLinkedNow ? <Pill>Linked</Pill> : <span style={{ opacity: 0.8 }}>Not linked</span>}</div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+                padding: "10px 12px",
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800 }}>Telegram</div>
+                <div style={{ opacity: 0.78, fontSize: 13 }}>
+                  {telegramLinkedNow
+                    ? regStatus?.tgId
+                      ? `Linked · tgId ${regStatus.tgId}`
+                      : "Linked"
+                    : "Not linked"}
+                </div>
+              </div>
+              <div>{telegramLinkedNow ? <Pill>Linked</Pill> : <span style={{ opacity: 0.8 }}>Not linked</span>}</div>
+            </div>
+          </div>
+
+          <div className="cw-divider" />
+
           <div className="cw-help">
-            Wallet: <span className="cw-mono">{account || "—"}</span>
+            Wallet: <span className="cw-mono">{account || appkitAddress || "—"}</span>
           </div>
           <div className="cw-help">
             Wallet chainId: <b>{walletChainId ?? "—"}</b> · Selected: <b>{chainId}</b>
@@ -2546,7 +2787,7 @@ export default function UserWalletPage() {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
             <MiniBtn kind="primary" onClick={connectWallet} disabled={busy}>
-              {account ? "Reconnect" : "Connect wallet"}
+              {walletConnectedNow ? "Reconnect wallet" : "Connect wallet"}
             </MiniBtn>
 
             {authed ? (
@@ -2555,24 +2796,9 @@ export default function UserWalletPage() {
               </MiniBtn>
             ) : (
               <MiniBtn kind="ghost" onClick={loginWithWallet} disabled={busy || !walletProvider}>
-                Sign in
+                Sign session
               </MiniBtn>
             )}
-
-            <MiniBtn
-              kind="ghost"
-              onClick={() => {
-                if (!authed) return setToastMsg("Sign in first.");
-                refreshBalances({ silent: true });
-                refreshLedgerAll({ silent: true });
-                refreshRegistrationStatus({ silent: true });
-                refreshUsdPricesAll({ silent: true });
-                setToastMsg("Refreshed.");
-              }}
-              disabled={!authed}
-            >
-              <Icon name="refresh" /> Refresh
-            </MiniBtn>
 
             <MiniBtn
               kind="ghost"
@@ -2595,14 +2821,55 @@ export default function UserWalletPage() {
 
           <div className="cw-divider" />
 
-          <div className="cw-help">
-            Registration: {authed ? <Pill>Signed in</Pill> : <span style={{ opacity: 0.8 }}>Sign in to view</span>}
+          <div className="cw-help" style={{ fontSize: 15, fontWeight: 900 }}>
+            Link accounts
           </div>
 
-          <div className="cw-help">
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+          <GoogleWalletLinkButton
+            label={googleLinkedNow ? "Google linked" : "Connect Google"}
+            onLinked={(info) => {
+              setGoogleLinkedUi(true);
+              setGoogleLinkedInfo(info);
+              refreshBalances({ silent: true }).catch(() => {});
+              refreshLedgerAll({ silent: true }).catch(() => {});
+              refreshRegistrationStatus({ silent: true }).catch(() => {});
+              refreshGoogleLinkStatus({ silent: true }).catch(() => {});
+              setToastMsg("Google linked.");
+            }}
+            onStatusChange={(linked, info) => {
+              setGoogleLinkedUi(linked);
+              setGoogleLinkedInfo(linked ? (info || null) : null);
+              refreshGoogleLinkStatus({ silent: true }).catch(() => {});
+            }}
+          />
+
+            <MiniBtn
+              kind="ghost"
+              onClick={() => openExternal(tgRegisterPageUrl)}
+              disabled={busy}
+            >
+              <Icon name="link" /> Open Telegram link page
+            </MiniBtn>
+
+
+          </div>
+
+          <div className="cw-help" style={{ marginTop: 12 }}>
+            Open the Telegram link page to connect or finish linking your Telegram account.
+          </div>
+
+          <div className="cw-divider" />
+
+          <div className="cw-help" style={{ opacity: 0.86 }}>
+            Registration status:{" "}
+            {authed ? <Pill>Signed in</Pill> : <span style={{ opacity: 0.8 }}>Sign in to view</span>}
+          </div>
+
+          <div className="cw-help" style={{ opacity: 0.86 }}>
             Telegram:{" "}
             {authed ? (
-              regStatus?.tgBound ? (
+              telegramLinkedNow ? (
                 <Pill>
                   Linked{regStatus?.tgId ? ` · tgId ${regStatus.tgId}` : ""}
                 </Pill>
@@ -2611,6 +2878,17 @@ export default function UserWalletPage() {
               )
             ) : (
               <span style={{ opacity: 0.8 }}>Sign in to view</span>
+            )}
+          </div>
+
+          <div className="cw-help" style={{ opacity: 0.86 }}>
+            Google:{" "}
+            {googleLinkedNow ? (
+              <Pill>
+                Linked{googleLinkedInfo?.email ? ` · ${googleLinkedInfo.email}` : ""}
+              </Pill>
+            ) : (
+              <span style={{ opacity: 0.8 }}>Not linked</span>
             )}
           </div>
         </div>

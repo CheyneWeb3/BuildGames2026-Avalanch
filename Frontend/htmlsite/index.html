@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE HAUS | The Institutional Cashier Layer for Avalanche</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Inter:wght@300;400;600;700;800;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --crimson: #ff0000;
+            --crimson-muted: #880000;
+            --dark-depth: #020202;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            background-color: var(--dark-depth);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .font-sync { font-family: 'Syncopate', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- ATMOSPHERIC FX --- */
+        .bg-industrial {
+            background:
+                radial-gradient(circle at 50% 0%, rgba(255, 0, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(255, 0, 0, 0.05) 0%, transparent 40%),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            background-attachment: fixed;
+        }
+
+        .scanline-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            z-index: 9999; background-size: 100% 4px, 3px 100%; pointer-events: none; opacity: 0.3;
+        }
+
+        /* --- GLOWS & BORDERS --- */
+        .red-glow-heavy { box-shadow: 0 0 60px rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); }
+        .text-glow { text-shadow: 0 0 20px #ff0000; }
+        .glass-panel { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .divider-red { height: 1px; background: linear-gradient(90deg, transparent, #ff0000, transparent); }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse-status { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
+        .status-dot { width: 10px; height: 10px; background: #ff0000; border-radius: 50%; animation: pulse-status 2s infinite; }
+
+        @keyframes float-ui { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .float-ui { animation: float-ui 6s ease-in-out infinite; }
+
+        .btn-haus {
+            background: linear-gradient(45deg, #ff0000, #990000);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .btn-haus:hover { transform: scale(1.05) translateY(-5px); box-shadow: 0 20px 40px rgba(255, 0, 0, 0.4); }
+
+        /* --- UTILS --- */
+        .sidebar-accent { border-left: 3px solid #ff0000; padding-left: 2rem; }
+        .nav-item { position: relative; font-size: 11px; font-weight: 900; letter-spacing: 0.3em; transition: 0.3s; color: #777; }
+        .nav-item:hover { color: #fff; }
+        .nav-item:hover::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 2px; background: #ff0000; }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-industrial selection:bg-red-600">
+    <div class="scanline-overlay"></div>
+
+    <nav class="fixed top-0 w-full z-[1000] border-b border-white/10 bg-black/90 backdrop-blur-2xl px-12 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-4 group cursor-pointer">
+            <div class="w-9 h-9 bg-red-600 rotate-45 border-2 border-red-300 shadow-[0_0_25px_#ff0000] group-hover:rotate-90 transition-all duration-700"></div>
+            <div>
+                <span class="font-sync text-2xl tracking-tighter uppercase italic block text-glow leading-none">THE HAUS</span>
+                <span class="font-mono text-[8px] text-red-500 uppercase tracking-[0.4em]">Cashier Layer // v1.0</span>
+            </div>
+        </div>
+
+        <div class="hidden xl:flex gap-16 uppercase italic">
+            <a href="#vision" class="nav-item">Vision</a>
+            <a href="#infrastructure" class="nav-item">Infrastructure</a>
+            <a href="#interface" class="nav-item">Interface</a>
+            <a href="#ecosystem" class="nav-item">Ecosystem</a>
+            <a href="#devs" class="nav-item">Dev Portal</a>
+        </div>
+
+        <div class="flex items-center gap-8">
+            <div class="hidden lg:flex items-center gap-3">
+                <div class="status-dot"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Fuji Network Live</span>
+            </div>
+            <a href="https://thehaus-fuji-mvp.netlify.app" target="_blank" class="btn-haus px-8 py-3 rounded text-[10px] font-black uppercase tracking-widest shadow-lg">Launch MVP</a>
+        </div>
+    </nav>
+
+    <header class="relative min-h-screen flex flex-col justify-center px-12 pt-40 overflow-hidden">
+        <div class="max-w-7xl relative z-10">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="h-px w-20 bg-red-600"></div>
+                <span class="font-mono text-red-500 text-xs uppercase tracking-[0.6em]">Avalanche Protocol Optimized</span>
+            </div>
+
+            <h1 class="font-sync text-6xl md:text-[150px] leading-[0.75] uppercase italic mb-12 tracking-tighter">
+                WALLET VALUE.<br>
+                <span class="text-red-600 opacity-90 drop-shadow-[0_0_30px_rgba(255,0,0,0.5)]">APP FLUIDITY.</span>
+            </h1>
+
+            <div class="max-w-4xl space-y-10">
+                <p class="text-3xl md:text-5xl font-black uppercase leading-none tracking-tight">
+                    Wallet Signing Is <span class="text-red-600 line-through decoration-4 underline-offset-8">Slow & Clunky</span>.<br>
+                    <span class="text-white relative">
+                        THE HAUS FIXES THIS.
+                        <span class="absolute -bottom-4 left-0 w-full h-2 bg-red-600"></span>
+                    </span>
+                </p>
+
+                <p class="text-xl md:text-2xl text-gray-400 font-light italic leading-relaxed max-w-2xl">
+                    "The Haus" moves the needle from raw wallet interaction to **fluid product experience.** Fund once. Interact smoothly. Withdraw anytime.
+                </p>
+            </div>
+
+            <div class="mt-16 flex flex-wrap gap-8">
+                <button class="btn-haus px-14 py-6 text-white font-black uppercase tracking-widest text-sm shadow-2xl">Start Spending</button>
+                <button class="glass-panel border-white/20 px-14 py-6 text-white font-black uppercase tracking-widest text-sm hover:bg-white/5 transition">Protocol Docs</button>
+            </div>
+        </div>
+
+        <div class="absolute right-[-10%] top-1/2 -translate-y-1/2 opacity-20 hidden 2xl:block float-ui">
+            <div class="w-[800px] h-[800px] border-[40px] border-red-600 rotate-45 shadow-[0_0_100px_#ff0000]"></div>
+        </div>
+    </header>
+
+    <div class="divider-red"></div>
+
+    <section id="vision" class="py-48 px-12 bg-black/40">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-32 items-center">
+                <div class="sidebar-accent">
+                    <h2 class="font-sync text-5xl mb-12 leading-none uppercase italic">The UX <br><span class="text-red-600">Bottleneck</span></h2>
+                    <div class="space-y-10 text-gray-300 text-xl leading-relaxed italic font-light">
+                        <p>Web3 apps currently feel like a sequence of approval screens. That is fine for one-off transactions, but it is <span class="text-white font-bold">catastrophic</span> for games, repeat actions, and community tools.</p>
+
+                        <p class="bg-red-600/10 p-8 border border-red-600/30 rounded-2xl text-white font-medium">
+                            The Haus sits in the middle. We keep the wallet foundation and Web3 trust model, but once funds are in the system, the product becomes as fluid as any Web2 application.
+                        </p>
+
+                        <p>We move theexperience from <span class="text-red-500 font-bold uppercase underline">every action is a wallet popup</span> to <span class="text-red-500 font-bold uppercase underline">wallet-backed value behaving like a real balance.</span></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="glass-panel p-10 rounded-[2.5rem] border-red-900/40 hover:scale-105 transition-all duration-500">
+                        <span class="font-sync text-red-600 text-4xl block mb-4">01</span>
+                        <h4 class="font-black uppercase tracking-widest mb-4">Connect</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed uppercase font-bold">Standard SIWE / Web3 login creates the root vault.</p>
+                    </div>
+                    <div class="glass-panel p-10 rounded-[2.5rem] border-red-900/40 hover:scale-105 transition-all duration-500 mt-12">
+                        <span class="font-sync text-red-600 text-4xl block mb-4">02</span>
+                        <h4 class="font-black uppercase tracking-widest mb-4">Fund</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed uppercase font-bold">Move value from wallet to the Cashier Layer.</p>
+                    </div>
+                    <div class="glass-panel p-10 rounded-[2.5rem] border-red-900/40 hover:scale-105 transition-all duration-500 -mt-12">
+                        <span class="font-sync text-red-600 text-4xl block mb-4">03</span>
+                        <h4 class="font-black uppercase tracking-widest mb-4">Spend</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed uppercase font-bold">Instant, gasless interactions inside the app flow.</p>
+                    </div>
+                    <div class="glass-panel p-10 rounded-[2.5rem] border-red-900/40 hover:scale-105 transition-all duration-500">
+                        <span class="font-sync text-red-600 text-4xl block mb-4">04</span>
+                        <h4 class="font-black uppercase tracking-widest mb-4">Withdraw</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed uppercase font-bold">Full settlement back to main-net wallet anytime.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="infrastructure" class="py-48 px-12 bg-[#050505] relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-32">
+                <h2 class="font-sync text-5xl md:text-7xl mb-6 italic uppercase tracking-tighter">ONE MODERN <span class="text-red-600 text-glow">CASHIER LAYER</span></h2>
+                <p class="text-gray-500 uppercase tracking-[0.6em] text-xs font-black italic">Modular Rail For Apps, Treasury Spend, Teams & Communities</p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-1px bg-white/5 rounded-[4rem] overflow-hidden red-glow-heavy">
+                <div class="bg-black p-20 hover:bg-red-950/20 transition-all duration-700 group">
+                    <div class="w-16 h-16 bg-red-600/10 border border-red-600/50 rounded-2xl flex items-center justify-center mb-10 group-hover:bg-red-600 transition-colors">
+                        <svg class="w-8 h-8 text-red-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <h3 class="font-sync text-2xl mb-8 uppercase italic tracking-tighter text-red-500">Wallet Backbone</h3>
+                    <p class="text-gray-400 text-lg leading-relaxed italic mb-8">Start with secure wallet-based ownership and SIWE/Web3 login. The Haus keeps the wallet foundation as the trust anchor.</p>
+                    <ul class="space-y-4 text-xs font-black uppercase tracking-widest text-gray-600">
+                        <li>• Non-Custodial Auth</li>
+                        <li>• Web3 Verification</li>
+                        <li>• Root Asset Security</li>
+                    </ul>
+                </div>
+
+                <div class="bg-black/95 p-20 hover:bg-red-950/20 transition-all duration-700 group relative">
+                    <div class="absolute top-8 right-8 text-red-500/10 font-black text-9xl leading-none italic select-none">02</div>
+                    <div class="w-16 h-16 bg-red-600/10 border border-red-600/50 rounded-2xl flex items-center justify-center mb-10 group-hover:bg-red-600 transition-colors relative z-10">
+                        <svg class="w-8 h-8 text-red-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <h3 class="font-sync text-2xl mb-8 uppercase italic tracking-tighter text-red-500 relative z-10">Flexible Spend</h3>
+                    <p class="text-gray-200 text-lg leading-relaxed italic mb-8 relative z-10 font-bold">Google-linked spend access enables low-friction usage. Familiar social logins for micro-spends, operator access, and repeat interactions.</p>
+                    <ul class="space-y-4 text-xs font-black uppercase tracking-widest text-red-500 relative z-10">
+                        <li>• Google-Linked Access</li>
+                        <li>• Social Spend Auth</li>
+                        <li>• Session Permissioning</li>
+                    </ul>
+                </div>
+
+                <div class="bg-black p-20 hover:bg-red-950/20 transition-all duration-700 group">
+                    <div class="w-16 h-16 bg-red-600/10 border border-red-600/50 rounded-2xl flex items-center justify-center mb-10 group-hover:bg-red-600 transition-colors">
+                        <svg class="w-8 h-8 text-red-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <h3 class="font-sync text-2xl mb-8 uppercase italic tracking-tighter text-red-500">Modular Cashier</h3>
+                    <p class="text-gray-400 text-lg leading-relaxed italic mb-8">Handle app interactions, payments, rewards, and withdrawals without losing Web3 trust. One system to rule the balance ledger.</p>
+                    <ul class="space-y-4 text-xs font-black uppercase tracking-widest text-gray-600">
+                        <li>• Spend Logic Engine</li>
+                        <li>• Automated Rewards</li>
+                        <li>• Withdrawal Liquidity</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="interface" class="py-48 px-12 bg-black overflow-hidden">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-32 items-center">
+            <div class="lg:w-1/2">
+                <h2 class="font-sync text-5xl mb-12 uppercase italic leading-[0.9] tracking-tighter">Turn Wallet Value<br>Into <span class="text-red-600">Fluid Action.</span></h2>
+
+                <div class="space-y-12">
+                    <div class="flex gap-8 items-start">
+                        <div class="font-sync text-red-600 text-2xl">01</div>
+                        <div>
+                            <h4 class="text-xl font-black uppercase mb-4 tracking-widest italic">App Balances & Spend</h4>
+                            <p class="text-gray-500 text-lg leading-relaxed italic">Use wallet-backed funds for games, apps, and project budgets through a streamlined interface.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-8 items-start">
+                        <div class="font-sync text-red-600 text-2xl">02</div>
+                        <div>
+                            <h4 class="text-xl font-black uppercase mb-4 tracking-widest italic">Wallet + Google Flow</h4>
+                            <p class="text-gray-500 text-lg leading-relaxed italic">The ease of Web2 with the trust of Web3. Linking social spend-auth to your high-value wallet.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-8 items-start">
+                        <div class="font-sync text-red-600 text-2xl">03</div>
+                        <div>
+                            <h4 class="text-xl font-black uppercase mb-4 tracking-widest italic">Instant Withdrawals</h4>
+                            <p class="text-gray-500 text-lg leading-relaxed italic">Full transparency. Move your application credit back to your root wallet at the click of a button.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:w-1/2 w-full p-1 bg-gradient-to-br from-red-600/50 to-transparent rounded-[3rem] red-glow-heavy float-ui">
+                <div class="bg-[#080808] rounded-[2.9rem] p-16">
+                    <div class="flex justify-between items-center mb-16 border-b border-white/5 pb-8">
+                        <div class="flex gap-4">
+                            <div class="w-3 h-3 rounded-full bg-red-600"></div>
+                            <div class="w-3 h-3 rounded-full bg-white/20"></div>
+                            <div class="w-3 h-3 rounded-full bg-white/20"></div>
+                        </div>
+                        <span class="font-mono text-[10px] text-gray-500 uppercase tracking-[0.5em]">Network: Fuji-Testnet</span>
+                    </div>
+
+                    <div class="mb-16">
+                        <p class="text-gray-600 text-[11px] uppercase font-black tracking-[0.3em] mb-4 italic">Available Cashier Balance</p>
+                        <div class="flex items-baseline gap-3">
+                            <span class="text-8xl font-black tracking-tighter italic italic">1036</span>
+                            <span class="text-red-600 text-4xl font-light italic">.78</span>
+                            <span class="text-gray-700 font-sync text-sm ml-4">MAV</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6 mb-12">
+                        <button class="bg-red-600 py-6 font-black uppercase text-xs tracking-[0.2em] italic hover:bg-red-700 transition active:scale-95 shadow-xl">Add Funds</button>
+                        <button class="bg-white/5 border border-white/10 py-6 font-black uppercase text-xs tracking-[0.2em] italic hover:bg-white/10 transition">Withdraw</button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="p-8 bg-black/60 border border-white/5 rounded-2xl flex justify-between items-center">
+                            <div class="font-mono text-[11px] text-gray-500 uppercase tracking-widest">Active Rewards (MAV)</div>
+                            <div class="text-red-500 font-black text-2xl italic tracking-tighter text-glow">15.00</div>
+                        </div>
+                        <div class="p-8 bg-black/60 border border-white/5 rounded-2xl flex justify-between items-center">
+                            <div class="font-mono text-[11px] text-gray-500 uppercase tracking-widest italic">Google Access:</div>
+                            <div class="text-white font-black text-xs uppercase tracking-widest">Linked (Active)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ecosystem" class="py-48 px-12 bg-industrial">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-32">
+                <h2 class="font-sync text-5xl md:text-7xl mb-8 uppercase italic tracking-tighter">BUILT FOR <span class="text-red-600">REAL USERS.</span></h2>
+                <div class="w-32 h-2 bg-red-600 mx-auto mb-8"></div>
+                <p class="text-gray-400 max-w-2xl mx-auto italic">High-velocity apps, games, and community systems that demand Web3 trust without the Web3 friction.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
+                <div class="glass-panel p-16 rounded-[3rem] border-red-900/20 hover:border-red-600 transition-all duration-500 group">
+                    <div class="text-5xl mb-10 group-hover:scale-110 transition">🎮</div>
+                    <h4 class="font-sync text-xl mb-6 uppercase italic text-red-500 tracking-tighter">App Interaction & Games</h4>
+                    <p class="text-gray-400 text-sm leading-relaxed italic mb-8">No more popups. fund once and play instantly. enable high-velocity rewards, items, and repeat transactions without leaving the game loop.</p>
+                    <div class="h-1 w-12 bg-red-900 group-hover:w-full transition-all duration-700"></div>
+                </div>
+
+                <div class="glass-panel p-16 rounded-[3rem] border-red-900/20 hover:border-red-600 transition-all duration-500 group bg-red-950/5">
+                    <div class="text-5xl mb-10 group-hover:scale-110 transition">🏛️</div>
+                    <h4 class="font-sync text-xl mb-6 uppercase italic text-red-500 tracking-tighter">Project Payments & Rewards</h4>
+                    <p class="text-gray-400 text-sm leading-relaxed italic mb-8">The rail for contributor rewards, campaign budgets, and operational team spending. Audit-ready treasury disbursements made simple.</p>
+                    <div class="h-1 w-12 bg-red-900 group-hover:w-full transition-all duration-700"></div>
+                </div>
+
+                <div class="glass-panel p-16 rounded-[3rem] border-red-900/20 hover:border-red-600 transition-all duration-500 group">
+                    <div class="text-5xl mb-10 group-hover:scale-110 transition">📱</div>
+                    <h4 class="font-sync text-xl mb-6 uppercase italic text-red-500 tracking-tighter">Social & Community</h4>
+                    <p class="text-gray-400 text-sm leading-relaxed italic mb-8">Extend your protocol's reach into Telegram, social platforms, and community balance flows. Seamless tipping and gated access.</p>
+                    <div class="h-1 w-12 bg-red-900 group-hover:w-full transition-all duration-700"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="devs" class="py-48 px-12 bg-[#020202]">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-24">
+            <div class="lg:w-1/3">
+                <span class="text-red-500 font-black text-[10px] tracking-[0.5em] uppercase mb-6 block">// MODULAR SDK</span>
+                <h2 class="font-sync text-4xl mb-8 leading-none uppercase italic">STOP REBUILDING <br>THE <span class="text-red-600 underline">CASHIER</span>.</h2>
+                <p class="text-gray-400 mb-10 leading-relaxed italic text-sm">Teams spend months building balances, deposits, rewards, and spend logic. The Haus gives you a reusable rail to rule every spend flow.</p>
+
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-gray-600 hover:text-red-500 transition cursor-pointer">
+                        <span class="w-12 h-px bg-red-900"></span> View API Docs
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-gray-600 hover:text-red-500 transition cursor-pointer">
+                        <span class="w-12 h-px bg-red-900"></span> SDK Repository
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-gray-600 hover:text-red-500 transition cursor-pointer">
+                        <span class="w-12 h-px bg-red-900"></span> Avalanche Fuji Contract
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:w-2/3 glass-panel rounded-[2rem] p-12 font-mono text-sm leading-loose text-red-200/50 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-red-600 opacity-50"></div>
+                <div class="flex gap-3 mb-10 opacity-30">
+                    <div class="w-3 h-3 rounded-full bg-red-600"></div>
+                    <div class="w-3 h-3 rounded-full bg-red-600"></div>
+                    <div class="w-3 h-3 rounded-full bg-red-600"></div>
+                </div>
+
+                <p><span class="text-red-500 font-bold italic">// Initialize Haus Protocol</span></p>
+                <p><span class="text-white font-bold">const</span> protocol = <span class="text-white">Haus.connect</span>({ network: <span class="text-white">'fuji-testnet'</span> });</p>
+                <br>
+                <p><span class="text-red-500 font-bold italic">// Enable Google-Linked Spend Auth</span></p>
+                <p><span class="text-white font-bold">await</span> protocol.<span class="text-white">linkAccess</span>({</p>
+                <p class="ml-8">provider: <span class="text-white">'google_linked'</span>,</p>
+                <p class="ml-8">maxLimit: <span class="text-white">100.00</span>,</p>
+                <p class="ml-8">currency: <span class="text-white">'MAV'</span></p>
+                <p>});</p>
+                <br>
+                <p><span class="text-red-500 font-bold italic">// Execute Gasless In-App Reward</span></p>
+                <p><span class="text-white font-bold">await</span> protocol.<span class="text-white">rewardUser</span>(userId, <span class="text-white">15.00</span>);</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-60 px-12 relative overflow-hidden">
+        <div class="absolute inset-0 bg-red-600/5 -z-10 blur-3xl"></div>
+        <div class="max-w-5xl mx-auto glass-panel p-24 rounded-[5rem] border border-red-500/20 text-center relative">
+            <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-red-600 rotate-45 border-4 border-red-400 red-glow-heavy"></div>
+
+            <h2 class="font-sync text-5xl md:text-7xl mb-12 uppercase italic leading-none tracking-tighter">Ready to Build <br><span class="text-red-600 underline underline-offset-8 decoration-8">Better.</span></h2>
+            <p class="text-red-100/60 text-xl md:text-2xl mb-16 italic font-light max-w-2xl mx-auto">
+                One modern Cashier Layer for apps, treasury spend, teams, and communities. Built on Avalanche.
+            </p>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-10">
+                <button class="btn-haus px-16 py-7 rounded-2xl text-white font-black uppercase text-sm shadow-[0_30px_60px_rgba(255,0,0,0.3)]">Deploy Protocol</button>
+                <button class="glass-panel px-16 py-7 rounded-2xl text-white font-black uppercase text-sm border-white/20 hover:bg-white/5 transition">Join Community</button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-32 px-12 border-t border-white/5 bg-black relative z-10">
+        <div class="max-w-7xl mx-auto grid lg:grid-cols-4 gap-20">
+            <div class="col-span-2">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-8 h-8 bg-red-600 rotate-45 border border-red-400 shadow-[0_0_15px_#ff0000]"></div>
+                    <span class="font-sync text-2xl tracking-tighter uppercase italic">THE HAUS</span>
+                </div>
+                <p class="text-gray-500 text-sm italic max-w-md leading-relaxed">
+                    The Haus provides modular cashier infrastructure for the Avalanche ecosystem. We bridge the gap between secure wallet ownership and fluid application usability.
+                </p>
+            </div>
+
+            <div>
+                <h5 class="text-[10px] font-black uppercase tracking-[0.5em] text-red-500 mb-8">Infrastructure</h5>
+                <ul class="space-y-6 text-[11px] font-black uppercase tracking-widest text-gray-500">
+                    <li><a href="#" class="hover:text-white transition">Wallet Backbone</a></li>
+                    <li><a href="#" class="hover:text-white transition">Flexible Spend</a></li>
+                    <li><a href="#" class="hover:text-white transition">Modular Cashier</a></li>
+                    <li><a href="#" class="hover:text-white transition">SDK Docs</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h5 class="text-[10px] font-black uppercase tracking-[0.5em] text-red-500 mb-8">Ecosystem</h5>
+                <ul class="space-y-6 text-[11px] font-black uppercase tracking-widest text-gray-500">
+                    <li><a href="#" class="hover:text-white transition">Gaming Rails</a></li>
+                    <li><a href="#" class="hover:text-white transition">Treasury Logic</a></li>
+                    <li><a href="#" class="hover:text-white transition">Social Tipping</a></li>
+                    <li><a href="#" class="hover:text-white transition">Partnerships</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-32 pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-10">
+            <div class="text-[10px] font-black uppercase tracking-[0.8em] text-gray-700 italic">thehaus-fuji-mvp.netlify.app</div>
+            <div class="flex gap-12 text-gray-600">
+                <a href="#" class="hover:text-red-500 transition uppercase text-[10px] font-black tracking-widest italic">Twitter</a>
+                <a href="#" class="hover:text-red-500 transition uppercase text-[10px] font-black tracking-widest italic">Discord</a>
+                <a href="#" class="hover:text-red-500 transition uppercase text-[10px] font-black tracking-widest italic">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

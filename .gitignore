@@ -7,3 +7,19 @@ FUJIMVP-mole-server-patch.zip
 Files/Assets/The_Haus_Cashier_MVP_PresentationSPOKEN.mp4
 Files/Assets/final to youtube.mp4
 Files/Assets/draftaifinalMVP1.mp4
+*.zip
+*.rar
+Frontend/bjackie/modules/blackjack/package.json
+Frontend/bjackie/modules/blackjack/src/game.ts
+Frontend/bjackie/modules/blackjack/src/index.ts
+Frontend/bjackie/modules/blackjack/src/registerBlackjackCoreRoutes.ts
+Frontend/bjackie/modules/blackjack/src/types.ts
+Frontend/bjackie/modules/blackjack/tsconfig.json
+Frontend/bjackie/modules/tg/src/index.ts
+Frontend/bjackie/services/core-api/New folder/blackjack/package.json
+Frontend/bjackie/services/core-api/New folder/blackjack/src/game.ts
+Frontend/bjackie/services/core-api/New folder/blackjack/src/index.ts
+Frontend/bjackie/services/core-api/New folder/blackjack/src/registerBlackjackCoreRoutes.ts
+Frontend/bjackie/services/core-api/New folder/blackjack/src/types.ts
+Frontend/bjackie/services/core-api/New folder/blackjack/tsconfig.json
+Frontend/bjackie/services/core-api/New folder/routes.ts

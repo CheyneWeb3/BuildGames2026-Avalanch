@@ -23,8 +23,11 @@ import TgRegisterPage from "./pages/mvp/TgRegisterPage";
 
 import AccountingBucketsPage from "./pages/mvp/AccountingBucketsPage";
 
+import GoogleWalletLinkPage from "./pages/mvp/GoogleWalletLinkPage";
 
+import DiceGooglePlayPage from "./pages/games/DiceGooglePlayPage";
 
+import EasyRegisterPage from "./pages/mvp/EasyRegisterPage";
 
 declare global {
   interface Window {
@@ -119,6 +122,7 @@ const App: React.FC = () => {
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<BalancesWalletPage />} />
+              <Route path="/home" element={<BalancesWalletPage />} />
 
             <Route path="/miniapp" element={<TgMiniWalletPage />} />
             <Route path="/treasury" element={<AccountingBucketsPage />} />
@@ -129,6 +133,13 @@ const App: React.FC = () => {
             <Route path="/coreapiadmin" element={<CoreApiAdminPage />} />
             <Route path="/user" element={<UserWalletPage />} />
             <Route path="/tg/register" element={<TgRegisterPage />} />
+            <Route path="/google-link" element={<GoogleWalletLinkPage />} />
+
+            <Route path="/googledice" element={<DiceGooglePlayPage />} />
+
+            <Route path="/bj" element={<BlackjackPage />} />
+
+            <Route path="/register-wallet-google" element={<EasyRegisterPage />} />
 
 
           </Routes>

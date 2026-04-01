@@ -1,12 +1,12 @@
 // src/pages/ZZNEW/TgRegisterPage.tsx
-// Telegram -> Wallet registration page (secure two-step bind).
-// HashRouter-safe: supports URLs like:
-//   https://yourapp/#/tg/register?moduleId=tg&code=399012
+// Telegram -> Wallet registration page
+// Clean single-column collapsible flow, no sidebar clutter.
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { BrowserProvider } from "ethers";
-import { useApiBase } from "../../ApiBaseContext"; // correct path from src/pages/ZZNEW
-import "./VaultAdminPage.css"; // reuse existing base styles
+import { QRCodeSVG } from "qrcode.react";
+import { useAppKit, useAppKitAccount, useAppKitProvider } from "../../config";
+import { useApiBase } from "../../ApiBaseContext";
 
 const LS_JWT = "haus_user_jwt";
 const TELEGRAM_BOT_URL = "https://t.me/TheHausAvaxFujiMvpBot";
@@ -29,14 +29,29 @@ type ApiError = Error & {
   data?: any;
 };
 
-type FlowState =
-  | "missing_params"
-  | "need_wallet"
-  | "need_login"
-  | "ready_to_confirm"
-  | "confirmed_step1"
-  | "done"
-  | "error";
+type StepKey =
+  | "telegram_start"
+  | "wallet_connect"
+  | "wallet_sign"
+  | "web_confirm"
+  | "telegram_finish";
+
+function shortAddr(a?: string) {
+  const s = (a || "").trim();
+  if (!s) return "";
+  return `${s.slice(0, 6)}…${s.slice(-4)}`;
+}
+
+function decodeJwtSub(token: string) {
+  try {
+    const payload = String(token).split(".")[1];
+    if (!payload) return "";
+    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return String(json?.sub || "");
+  } catch {
+    return "";
+  }
+}
 
 function readResponseSafeTextToJson(txt: string) {
   try {
@@ -53,11 +68,6 @@ function buildApiError(message: string, status?: number, data?: any): ApiError {
   return e;
 }
 
-function shortAddr(a?: string) {
-  if (!a) return "";
-  return `${a.slice(0, 6)}…${a.slice(-4)}`;
-}
-
 function readQueryParams(): URLSearchParams {
   const s = window.location.search || "";
   if (s && s.includes("=")) return new URLSearchParams(s);
@@ -69,34 +79,46 @@ function readQueryParams(): URLSearchParams {
   return new URLSearchParams();
 }
 
-function getStepIndex(flowState: FlowState, hasWallet: boolean, hasJwt: boolean) {
-  if (flowState === "missing_params") return 0;
-  if (flowState === "done" || flowState === "confirmed_step1") return 4;
-  if (!hasWallet) return 1;
-  if (!hasJwt) return 2;
-  return 3;
+function copyText(text: string) {
+  return navigator.clipboard.writeText(text);
 }
 
-function stepLabel(step: number) {
-  if (step <= 1) return "Connect Wallet";
-  if (step === 2) return "Sign In";
-  if (step === 3) return "Confirm Wallet";
-  return "Finish in Telegram";
+function buildTelegramStartUrl(baseUrl: string, payload: string) {
+  const base = String(baseUrl || "").trim().replace(/\/+$/, "");
+  const p = encodeURIComponent(String(payload || "").trim());
+  if (!base || !p) return base;
+  return `${base}?start=${p}`;
+}
+
+function StepStatusIcon({
+  done,
+  active,
+  locked,
+}: {
+  done?: boolean;
+  active?: boolean;
+  locked?: boolean;
+}) {
+  if (done) return <div className="u-step-icon done">✓</div>;
+  if (active) return <div className="u-step-icon active">•</div>;
+  if (locked) return <div className="u-step-icon locked">🔒</div>;
+  return <div className="u-step-icon">•</div>;
 }
 
 export default function TgRegisterPage() {
-  // Handles both possible return shapes from your context:
-  // - string api base
-  // - object { apiBase }
-  const apiBaseCtx = useApiBase() as any;
-  const resolvedApiBase =
-    typeof apiBaseCtx === "string"
-      ? apiBaseCtx
-      : (apiBaseCtx?.apiBase as string | undefined) || "";
+  const apiBaseRaw = useApiBase() as any;
+  const apiBase =
+    (typeof apiBaseRaw === "string"
+      ? apiBaseRaw
+      : (apiBaseRaw?.apiBase as string | undefined) || ""
+    ).replace(/\/+$/, "");
 
-  const apiBase = (resolvedApiBase || "").replace(/\/+$/, "");
+  const { open } = useAppKit();
+  const { address: appkitAddress, isConnected } = useAppKitAccount();
+  const { walletProvider: appkitWalletProvider } = useAppKitProvider("eip155");
 
   const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState("");
 
   const [jwt, setJwt] = useState<string>(() => localStorage.getItem(LS_JWT) || "");
   const [walletProvider, setWalletProvider] = useState<BrowserProvider | null>(null);
@@ -105,22 +127,73 @@ export default function TgRegisterPage() {
   const [moduleId, setModuleId] = useState<string>("tg");
   const [code, setCode] = useState<string>("");
 
-  const [statusFriendly, setStatusFriendly] = useState<string>("");
-  const [errorText, setErrorText] = useState<string>("");
+  const [statusFriendly, setStatusFriendly] = useState("");
+  const [errorText, setErrorText] = useState("");
 
   const [linkStatus, setLinkStatus] = useState<LinkStatusResp | null>(null);
+  const [webConfirmSubmitted, setWebConfirmSubmitted] = useState(false);
 
-  const [flowState, setFlowState] = useState<FlowState>("need_wallet");
+  const [openStep, setOpenStep] = useState<StepKey>("telegram_start");
+  const [showQr, setShowQr] = useState(false);
+
+  const jwtSub = useMemo(() => decodeJwtSub(jwt), [jwt]);
+  const hasWalletJwt = useMemo(() => /^0x[a-fA-F0-9]{40}$/.test(jwtSub), [jwtSub]);
+
+  const connectedWalletLabel = account || (hasWalletJwt ? jwtSub : "");
+  const currentWalletDisplay =
+    account ||
+    (linkStatus?.pendingWallet as string) ||
+    (linkStatus?.linkedWallet as string) ||
+    (linkStatus?.wallet as string) ||
+    (linkStatus?.address as string) ||
+    "";
 
   const authHeaders = useMemo(
     () => (jwt ? { Authorization: `Bearer ${jwt}` } : {}),
     [jwt]
   );
 
+  const pageUrl = useMemo(() => window.location.href, []);
+  const botRegisterUrl = useMemo(
+    () => buildTelegramStartUrl(TELEGRAM_BOT_URL, "register"),
+    []
+  );
+  const botApproveUrl = useMemo(
+    () => buildTelegramStartUrl(TELEGRAM_BOT_URL, "approve"),
+    []
+  );
+
+  const telegramStartedDone = !!code;
+  const walletConnectedDone = !!connectedWalletLabel;
+  const walletSignedDone = hasWalletJwt;
+
+  const statusState = String(linkStatus?.state || linkStatus?.status || "").toLowerCase();
+
+  const webConfirmedDone =
+    webConfirmSubmitted ||
+    statusState.includes("confirmed") ||
+    statusState.includes("approved") ||
+    statusState.includes("linked") ||
+    statusState.includes("done");
+
+  const telegramFinishedDone =
+    statusState.includes("approved") ||
+    statusState.includes("linked") ||
+    statusState.includes("done");
+
+  const readyToUse =
+    telegramStartedDone &&
+    walletConnectedDone &&
+    walletSignedDone &&
+    webConfirmedDone;
+
+  const setToastMsg = useCallback((s: string) => {
+    setToast(s);
+    window.setTimeout(() => setToast(""), 4500);
+  }, []);
+
   async function apiJson(path: string, init?: RequestInit) {
-    if (!apiBase) {
-      throw buildApiError("API base is missing (resolver not ready).");
-    }
+    if (!apiBase) throw buildApiError("API base missing.");
 
     const url = `${apiBase}${path.startsWith("/") ? path : `/${path}`}`;
 
@@ -143,46 +216,25 @@ export default function TgRegisterPage() {
     return data;
   }
 
-  async function refreshLinkStatus() {
-    setErrorText("");
-    if (!code) return;
-
-    // Status endpoint requires JWT (based on your server behavior).
-    if (!jwt) {
-      setLinkStatus(null);
+  useEffect(() => {
+    if (!isConnected || !appkitWalletProvider) {
+      setWalletProvider(null);
+      setAccount("");
       return;
     }
 
-    try {
-      const qs = new URLSearchParams({ moduleId, code }).toString();
-      const data = await apiJson(`/me/tg/link/status?${qs}`, {
-        method: "GET",
-        headers: authHeaders as any,
-      });
-
-      setLinkStatus(data);
-
-      const state = String(data?.state || data?.status || "").toLowerCase();
-      if (state.includes("done") || state.includes("approved") || state.includes("linked")) {
-        setFlowState("done");
-        setStatusFriendly("Link complete. Your Telegram account is linked to this wallet.");
-      } else if (state.includes("confirmed")) {
-        setFlowState("confirmed_step1");
-        setStatusFriendly("Wallet confirmed on web. Final step: return to Telegram and run /approve.");
+    (async () => {
+      try {
+        const bp = new BrowserProvider(appkitWalletProvider as any);
+        setWalletProvider(bp);
+        setAccount(appkitAddress || "");
+      } catch {
+        setWalletProvider(null);
+        setAccount("");
       }
-    } catch (e: any) {
-      if (e?.status === 401) {
-        setLinkStatus(null);
-        setErrorText("");
-        setStatusFriendly("Wallet session expired. Please sign in again.");
-        setFlowState(account ? "need_login" : "need_wallet");
-        return;
-      }
-      setErrorText(e?.message || "Failed to fetch link status.");
-    }
-  }
+    })();
+  }, [isConnected, appkitWalletProvider, appkitAddress]);
 
-  // Read params on mount + hash changes
   useEffect(() => {
     const apply = () => {
       const params = readQueryParams();
@@ -193,20 +245,38 @@ export default function TgRegisterPage() {
       setCode(c);
 
       if (!c) {
-        setFlowState("missing_params");
-        setStatusFriendly("Missing one-time code. Open this page from the Telegram bot /register link.");
-      } else {
-        setStatusFriendly("");
-        setFlowState((prev) => (prev === "done" ? "done" : "need_wallet"));
+        setOpenStep("telegram_start");
+        return;
       }
+
+      if (telegramFinishedDone) {
+        setOpenStep("telegram_finish");
+        return;
+      }
+
+      if (webConfirmedDone) {
+        setOpenStep("telegram_finish");
+        return;
+      }
+
+      if (walletSignedDone) {
+        setOpenStep("web_confirm");
+        return;
+      }
+
+      if (walletConnectedDone) {
+        setOpenStep("wallet_sign");
+        return;
+      }
+
+      setOpenStep("wallet_connect");
     };
 
     apply();
     window.addEventListener("hashchange", apply);
     return () => window.removeEventListener("hashchange", apply);
-  }, []);
+  }, [walletConnectedDone, walletSignedDone, webConfirmedDone, telegramFinishedDone]);
 
-  // Try to restore connected wallet silently (better UX)
   useEffect(() => {
     let cancelled = false;
 
@@ -225,115 +295,171 @@ export default function TgRegisterPage() {
 
         setWalletProvider(bp);
         setAccount(addr);
-
-        if (jwt) setFlowState("ready_to_confirm");
-        else setFlowState("need_login");
       } catch {
-        // silent
+        // ignore
       }
     }
 
-    tryReconnectWallet();
+    void tryReconnectWallet();
     return () => {
       cancelled = true;
     };
-  }, [jwt]);
+  }, []);
 
-  // Refresh status when everything is ready
-  useEffect(() => {
-    if (apiBase && code && jwt) {
-      refreshLinkStatus().catch(() => {});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiBase, code, jwt]);
-
-  async function connectWallet() {
-    setStatusFriendly("");
+  const refreshTelegramLinkStatus = useCallback(async () => {
     setErrorText("");
-
-    if (!(window as any).ethereum) {
-      setErrorText("No wallet detected. Open in MetaMask/wallet browser.");
+    if (!code) return;
+    if (!jwt) {
+      setLinkStatus(null);
       return;
     }
 
-    setBusy(true);
     try {
-      const bp = new BrowserProvider((window as any).ethereum);
-      await bp.send("eth_requestAccounts", []);
-      const signer = await bp.getSigner();
-      const addr = await signer.getAddress();
+      const qs = new URLSearchParams({ moduleId, code }).toString();
+      const data = await apiJson(`/me/tg/link/status?${qs}`, {
+        method: "GET",
+        headers: authHeaders as any,
+      });
 
-      setWalletProvider(bp);
-      setAccount(addr);
+      setLinkStatus(data);
 
-      if (jwt) {
-        setFlowState("ready_to_confirm");
-        setStatusFriendly("Wallet connected. You can confirm now.");
-      } else {
-        setFlowState("need_login");
-        setStatusFriendly("Wallet connected. Next step: sign in.");
+      const state = String(data?.state || data?.status || "").toLowerCase();
+
+      if (state.includes("done") || state.includes("approved") || state.includes("linked")) {
+        setStatusFriendly("Telegram link complete.");
+        setOpenStep("telegram_finish");
+        return;
+      }
+
+      if (state.includes("confirmed")) {
+        setWebConfirmSubmitted(true);
+        setStatusFriendly("Wallet confirmed on web. Open Telegram approve to finish.");
+        setOpenStep("telegram_finish");
       }
     } catch (e: any) {
-      setErrorText(e?.message || "Failed to connect wallet.");
-    } finally {
-      setBusy(false);
+      if (e?.status === 401) {
+        setLinkStatus(null);
+        setStatusFriendly("Wallet session expired. Sign in again.");
+        return;
+      }
+      setErrorText(e?.message || "Failed to refresh Telegram link status.");
     }
-  }
+  }, [authHeaders, code, jwt, moduleId]);
 
-  async function signInWithWallet() {
-    setStatusFriendly("");
-    setErrorText("");
+  useEffect(() => {
+    if (apiBase && code && jwt) {
+      void refreshTelegramLinkStatus();
+    }
+  }, [apiBase, code, jwt, refreshTelegramLinkStatus]);
 
-    if (!walletProvider) {
-      setErrorText("Connect wallet first.");
+  useEffect(() => {
+    if (telegramFinishedDone) {
+      setOpenStep("telegram_finish");
       return;
     }
+    if (webConfirmedDone) {
+      setOpenStep("telegram_finish");
+      return;
+    }
+    if (walletSignedDone && code) {
+      setOpenStep("web_confirm");
+      return;
+    }
+    if (walletConnectedDone && code) {
+      setOpenStep("wallet_sign");
+      return;
+    }
+    if (code) {
+      setOpenStep("wallet_connect");
+      return;
+    }
+    setOpenStep("telegram_start");
+  }, [code, telegramFinishedDone, walletConnectedDone, walletSignedDone, webConfirmedDone]);
+
+  function openTelegramRegister() {
+    window.open(botRegisterUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function openTelegramApprove() {
+    window.open(botApproveUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function openWalletConnect() {
+    open?.();
+  }
+
+  async function signWalletSession() {
+    if (!walletProvider) return setToastMsg("Connect wallet first.");
+    if (!account) return setToastMsg("No wallet account found.");
 
     setBusy(true);
+    setErrorText("");
+    setStatusFriendly("");
+
     try {
-      const signer = await walletProvider.getSigner();
-      const addr = await signer.getAddress();
+      const addr = account.toLowerCase();
 
       const nonceResp = await apiJson("/auth/nonce", {
         method: "POST",
         body: JSON.stringify({ address: addr }),
       });
 
-      const message: string =
-        nonceResp?.message ||
-        nonceResp?.nonce ||
-        nonceResp?.data?.message ||
-        nonceResp?.data?.nonce;
+      const nonce = String(nonceResp?.nonce || "");
+      if (!nonce) throw new Error("Nonce missing.");
 
-      if (!message || typeof message !== "string") {
-        throw buildApiError("Nonce response missing message/nonce.");
-      }
-
-      const signature = await signer.signMessage(message);
+      const signer = await walletProvider.getSigner();
+      const sig = await signer.signMessage(`THE HAUS LOGIN\n\nAddress: ${addr}\nNonce: ${nonce}`);
 
       const verifyResp = await apiJson("/auth/verify", {
         method: "POST",
-        body: JSON.stringify({ address: addr, signature }),
+        body: JSON.stringify({ address: addr, signature: sig }),
       });
 
       const tokenJwt: string =
-        verifyResp?.token ||
-        verifyResp?.jwt ||
-        verifyResp?.data?.token ||
-        verifyResp?.data?.jwt;
+        verifyResp?.token || verifyResp?.jwt || verifyResp?.data?.token || verifyResp?.data?.jwt;
 
       if (!tokenJwt || typeof tokenJwt !== "string") {
-        throw buildApiError("Verify response missing jwt/token.");
+        throw new Error("Verify response missing jwt.");
       }
 
       localStorage.setItem(LS_JWT, tokenJwt);
       setJwt(tokenJwt);
-
-      setFlowState("ready_to_confirm");
-      setStatusFriendly("Signed in successfully. Next step: confirm wallet.");
+      setStatusFriendly("Wallet session signed.");
+      setOpenStep("web_confirm");
     } catch (e: any) {
       setErrorText(e?.message || "Wallet sign-in failed.");
-      setFlowState("error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmTelegramLink() {
+    if (!jwt) return setToastMsg("Sign wallet session first.");
+    if (!code) return setToastMsg("Missing Telegram code.");
+    if (!hasWalletJwt) return setToastMsg("Wallet session not active.");
+
+    setBusy(true);
+    setErrorText("");
+    setStatusFriendly("");
+
+    try {
+      const resp = await apiJson("/me/tg/link/confirm", {
+        method: "POST",
+        headers: authHeaders as any,
+        body: JSON.stringify({ moduleId, code }),
+      });
+
+      setLinkStatus(resp || null);
+      setWebConfirmSubmitted(true);
+      setStatusFriendly("Wallet confirmed. Final step: open Telegram approve to finish.");
+      setOpenStep("telegram_finish");
+
+      window.setTimeout(() => {
+        void refreshTelegramLinkStatus();
+      }, 150);
+    } catch (e: any) {
+      const msg = e?.message || "Failed to confirm Telegram link.";
+      setErrorText(msg);
     } finally {
       setBusy(false);
     }
@@ -343,618 +469,655 @@ export default function TgRegisterPage() {
     localStorage.removeItem(LS_JWT);
     setJwt("");
     setLinkStatus(null);
+    setWebConfirmSubmitted(false);
     setErrorText("");
-    setStatusFriendly("Local wallet session cleared.");
-    setFlowState(account ? "need_login" : "need_wallet");
+    setStatusFriendly("Wallet session cleared.");
+    setOpenStep(code ? "wallet_connect" : "telegram_start");
   }
-
-  async function confirmTelegramLink() {
-    setStatusFriendly("");
-    setErrorText("");
-
-    if (!jwt) {
-      setErrorText("Sign in first.");
-      setFlowState("need_login");
-      return;
-    }
-    if (!code) {
-      setErrorText("Missing code. Open this page from the Telegram /register link.");
-      setFlowState("missing_params");
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const resp = await apiJson("/me/tg/link/confirm", {
-        method: "POST",
-        headers: authHeaders as any,
-        body: JSON.stringify({ moduleId, code }),
-      });
-
-      setLinkStatus(resp || null);
-      setFlowState("confirmed_step1");
-      setStatusFriendly("Wallet confirmed. Final step: go back to Telegram and run /approve.");
-
-      setTimeout(() => {
-        refreshLinkStatus().catch(() => {});
-      }, 100);
-    } catch (e: any) {
-      const msg = e?.message || "Failed to confirm link.";
-      setErrorText(msg);
-
-      if (String(msg).toUpperCase().includes("BAD_CODE")) {
-        setStatusFriendly("This code is invalid / expired / already used. Open a fresh /register link from Telegram.");
-      }
-
-      setFlowState("error");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const currentWalletDisplay =
-    account ||
-    (linkStatus?.pendingWallet as string) ||
-    (linkStatus?.linkedWallet as string) ||
-    (linkStatus?.wallet as string) ||
-    (linkStatus?.address as string) ||
-    "—";
-
-  const currentStep = getStepIndex(flowState, !!account, !!jwt);
-
-  const canConnect = !busy && flowState !== "missing_params";
-  const canSignIn = !busy && !!account;
-  const canConfirm = !busy && !!account && !!jwt && !!code;
-
-  // Single primary action (reduces button chaos)
-  const primaryAction = (() => {
-    if (flowState === "missing_params") {
-      return {
-        label: "Open from Telegram /register link",
-        onClick: () => window.open(TELEGRAM_BOT_URL, "_blank", "noopener,noreferrer"),
-        disabled: false,
-      };
-    }
-    if (!account) {
-      return { label: busy ? "Connecting..." : "Connect Wallet", onClick: connectWallet, disabled: !canConnect };
-    }
-    if (!jwt) {
-      return { label: busy ? "Signing In..." : "Sign In with Wallet", onClick: signInWithWallet, disabled: !canSignIn };
-    }
-    if (flowState !== "confirmed_step1" && flowState !== "done") {
-      return { label: busy ? "Confirming..." : "Confirm Wallet (Step 1)", onClick: confirmTelegramLink, disabled: !canConfirm };
-    }
-    return {
-      label: "Open Telegram Bot (Finish /approve)",
-      onClick: () => window.open(TELEGRAM_BOT_URL, "_blank", "noopener,noreferrer"),
-      disabled: false,
-    };
-  })();
-
-  const stateText =
-    flowState === "missing_params"
-      ? "Waiting for Telegram link code"
-      : flowState === "need_wallet"
-      ? "Connect wallet to begin"
-      : flowState === "need_login"
-      ? "Sign in with wallet"
-      : flowState === "ready_to_confirm"
-      ? "Ready to confirm wallet"
-      : flowState === "confirmed_step1"
-      ? "Web step complete — finish in Telegram"
-      : flowState === "done"
-      ? "Registration complete"
-      : "Action needed";
-
-  const alreadyLinkedToDifferentWallet = (() => {
-    const statusWallet =
-      (linkStatus?.linkedWallet ||
-        linkStatus?.pendingWallet ||
-        linkStatus?.wallet ||
-        linkStatus?.address) as string | undefined;
-
-    if (!statusWallet || !account) return false;
-    return statusWallet.toLowerCase() !== account.toLowerCase();
-  })();
 
   return (
-    <div className="va-page">
+    <div className="setup-page">
+      <div className="setup-wrap">
+        <div className="setup-shell">
+          <div className="setup-head">
+            <h1>Telegram Link</h1>
+            <p>Start in Telegram register, connect your wallet, confirm on web, then open Telegram approve to finish.</p>
+          </div>
+
+          <div className="setup-main-grid single-column">
+            <div className="setup-primary">
+              <div className="step-stack">
+                <div className={`step-card ${openStep === "telegram_start" ? "open" : ""}`}>
+                  <button className="step-head-btn" onClick={() => setOpenStep("telegram_start")}>
+                    <div className="step-head-left">
+                      <StepStatusIcon
+                        done={telegramStartedDone}
+                        active={openStep === "telegram_start" && !telegramStartedDone}
+                      />
+                      <div>
+                        <div className="step-title">Start in Telegram register</div>
+                        <div className="step-sub">
+                          Open the bot using the register deep link so Telegram starts your one-time registration flow.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="step-chevron">{openStep === "telegram_start" ? "−" : "+"}</div>
+                  </button>
+
+                  {openStep === "telegram_start" && (
+                    <div className="step-body">
+                      <div className="step-note">
+                        This flow starts in Telegram, not on the website. Open the bot with the register link below. That should run the bot start payload for <b>register</b>, which then creates your one-time link.
+                      </div>
+
+                      <button
+                        className="btn btn-primary btn-full-mobile"
+                        onClick={openTelegramRegister}
+                        disabled={busy}
+                      >
+                        Open Telegram Register
+                      </button>
+
+                      <button
+                        className="btn btn-secondary btn-full-mobile"
+                        onClick={() => setShowQr((s) => !s)}
+                        disabled={busy}
+                      >
+                        {showQr ? "Hide Register QR" : "Show Register QR"}
+                      </button>
+
+                      {showQr ? (
+                        <div className="qr-wrap">
+                          <div className="qr-box">
+                            <QRCodeSVG value={botRegisterUrl} size={220} />
+                          </div>
+
+                          <div className="url-box">{botRegisterUrl}</div>
+
+                          <button
+                            className="btn btn-soft btn-full-mobile"
+                            onClick={() => void copyText(botRegisterUrl).then(() => setToastMsg("Register link copied."))}
+                          >
+                            Copy Register Link
+                          </button>
+                        </div>
+                      ) : null}
+
+                      <div className="value-box">
+                        {code ? `Telegram code detected: ${code}` : "No Telegram register code detected yet"}
+                      </div>
+
+                      {telegramStartedDone ? (
+                        <button
+                          className="btn btn-soft btn-full-mobile"
+                          onClick={() => setOpenStep("wallet_connect")}
+                        >
+                          Next: Connect Wallet
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className={`step-card ${openStep === "wallet_connect" ? "open" : ""} ${
+                    !telegramStartedDone ? "locked" : ""
+                  }`}
+                >
+                  <button
+                    className="step-head-btn"
+                    onClick={() => telegramStartedDone && setOpenStep("wallet_connect")}
+                  >
+                    <div className="step-head-left">
+                      <StepStatusIcon
+                        done={walletConnectedDone}
+                        active={openStep === "wallet_connect" && !walletConnectedDone}
+                        locked={!telegramStartedDone}
+                      />
+                      <div>
+                        <div className="step-title">Connect wallet</div>
+                        <div className="step-sub">
+                          Connect with extension, wallet app, or WalletConnect QR.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="step-chevron">{openStep === "wallet_connect" ? "−" : "+"}</div>
+                  </button>
+
+                  {openStep === "wallet_connect" && telegramStartedDone && (
+                    <div className="step-body">
+                      <div className="step-note">
+                        No browser extension? Open the wallet modal anyway and use your phone wallet.
+                      </div>
+
+                      <button
+                        className="btn btn-primary btn-full-mobile"
+                        onClick={openWalletConnect}
+                        disabled={busy}
+                      >
+                        Connect Wallet
+                      </button>
+
+                      <div className="value-box">
+                        {connectedWalletLabel ? shortAddr(connectedWalletLabel) : "Not connected yet"}
+                      </div>
+
+                      {walletConnectedDone ? (
+                        <button
+                          className="btn btn-soft btn-full-mobile"
+                          onClick={() => setOpenStep("wallet_sign")}
+                        >
+                          Next: Sign Wallet Session
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className={`step-card ${openStep === "wallet_sign" ? "open" : ""} ${
+                    !walletConnectedDone ? "locked" : ""
+                  }`}
+                >
+                  <button
+                    className="step-head-btn"
+                    onClick={() => walletConnectedDone && setOpenStep("wallet_sign")}
+                  >
+                    <div className="step-head-left">
+                      <StepStatusIcon
+                        done={walletSignedDone}
+                        active={openStep === "wallet_sign" && !walletSignedDone}
+                        locked={!walletConnectedDone}
+                      />
+                      <div>
+                        <div className="step-title">Sign wallet session</div>
+                        <div className="step-sub">Prove ownership of the connected wallet.</div>
+                      </div>
+                    </div>
+                    <div className="step-chevron">{openStep === "wallet_sign" ? "−" : "+"}</div>
+                  </button>
+
+                  {openStep === "wallet_sign" && walletConnectedDone && (
+                    <div className="step-body">
+                      <button
+                        className={`btn ${walletSignedDone ? "btn-success" : "btn-primary"} btn-full-mobile`}
+                        onClick={() => void signWalletSession()}
+                        disabled={busy}
+                      >
+                        {walletSignedDone ? "Wallet Signed" : "Sign Wallet Session"}
+                      </button>
+
+                      {walletSignedDone ? (
+                        <button
+                          className="btn btn-soft btn-full-mobile"
+                          onClick={() => setOpenStep("web_confirm")}
+                        >
+                          Next: Confirm on Web
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className={`step-card ${openStep === "web_confirm" ? "open" : ""} ${
+                    !walletSignedDone ? "locked" : ""
+                  }`}
+                >
+                  <button
+                    className="step-head-btn"
+                    onClick={() => walletSignedDone && setOpenStep("web_confirm")}
+                  >
+                    <div className="step-head-left">
+                      <StepStatusIcon
+                        done={webConfirmedDone}
+                        active={openStep === "web_confirm" && !webConfirmedDone}
+                        locked={!walletSignedDone}
+                      />
+                      <div>
+                        <div className="step-title">Confirm wallet on web</div>
+                        <div className="step-sub">
+                          Match this wallet to the Telegram request code.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="step-chevron">{openStep === "web_confirm" ? "−" : "+"}</div>
+                  </button>
+
+                  {openStep === "web_confirm" && walletSignedDone && (
+                    <div className="step-body">
+                      <div className="value-box">
+                        Module: {moduleId || "tg"}
+                        <br />
+                        Code: {code || "Missing"}
+                        <br />
+                        Wallet: {currentWalletDisplay ? shortAddr(currentWalletDisplay) : shortAddr(connectedWalletLabel) || "—"}
+                      </div>
+
+                      <button
+                        className={`btn ${webConfirmedDone ? "btn-success" : "btn-primary"} btn-full-mobile`}
+                        onClick={() => void confirmTelegramLink()}
+                        disabled={busy || !code || !hasWalletJwt}
+                      >
+                        {webConfirmedDone ? "Wallet Confirmed" : "Confirm Wallet"}
+                      </button>
+
+                      {webConfirmedDone ? (
+                        <button
+                          className="btn btn-soft btn-full-mobile"
+                          onClick={() => setOpenStep("telegram_finish")}
+                        >
+                          Next: Open Telegram Approve
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className={`step-card ${openStep === "telegram_finish" ? "open" : ""} ${
+                    !webConfirmedDone ? "locked" : ""
+                  }`}
+                >
+                  <button
+                    className="step-head-btn"
+                    onClick={() => webConfirmedDone && setOpenStep("telegram_finish")}
+                  >
+                    <div className="step-head-left">
+                      <StepStatusIcon
+                        done={telegramFinishedDone}
+                        active={openStep === "telegram_finish" && !telegramFinishedDone}
+                        locked={!webConfirmedDone}
+                      />
+                      <div>
+                        <div className="step-title">Return to Telegram approve</div>
+                        <div className="step-sub">
+                          Open the bot approve deep link so Telegram runs the approve flow and finishes the link.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="step-chevron">{openStep === "telegram_finish" ? "−" : "+"}</div>
+                  </button>
+
+                  {openStep === "telegram_finish" && (
+                    <div className="step-body">
+                      <button
+                        className="btn btn-primary btn-full-mobile"
+                        onClick={openTelegramApprove}
+                      >
+                        Open Telegram Approve
+                      </button>
+
+                      <div className="url-box">{botApproveUrl}</div>
+
+                      <button
+                        className="btn btn-soft btn-full-mobile"
+                        onClick={() => void copyText(botApproveUrl).then(() => setToastMsg("Approve link copied."))}
+                      >
+                        Copy Approve Link
+                      </button>
+
+                      <button
+                        className="btn btn-secondary btn-full-mobile"
+                        onClick={() => void refreshTelegramLinkStatus()}
+                        disabled={busy || !jwt || !code}
+                      >
+                        Refresh Link Status
+                      </button>
+
+                      <div className="success-panel">
+                        <div className="success-title">
+                          {telegramFinishedDone ? "Telegram link complete" : "Final Telegram step"}
+                        </div>
+                        <div className="success-sub">
+                          {telegramFinishedDone
+                            ? "Your Telegram account is now linked to this wallet."
+                            : "Your wallet is confirmed on the website. Open Telegram approve to finish."}
+                        </div>
+                      </div>
+
+                      <button
+                        className="btn btn-soft btn-full-mobile"
+                        onClick={() => void copyText(pageUrl).then(() => setToastMsg("Page link copied."))}
+                        disabled={!code}
+                      >
+                        Copy This Page Link
+                      </button>
+
+                      <button
+                        className="btn btn-soft btn-full-mobile"
+                        onClick={clearSession}
+                        disabled={busy}
+                      >
+                        Clear Wallet Session
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {!!statusFriendly ? <div className="toast-bar success">{statusFriendly}</div> : null}
+              {!!errorText ? <div className="toast-bar error">{errorText}</div> : null}
+              {!!toast ? <div className="toast-bar">{toast}</div> : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <style>{`
-        .tgreg-wrap {
-          max-width: 980px;
+        .setup-page {
+          min-height: 100vh;
+          background:
+            radial-gradient(1200px 600px at 10% 10%, rgba(232,65,66,0.14), transparent 60%),
+            radial-gradient(1200px 600px at 90% 0%, rgba(255,107,107,0.12), transparent 55%),
+            #0b0a0f;
+          color: rgba(255,255,255,0.92);
+          padding: 18px 12px 28px;
+          box-sizing: border-box;
+        }
+
+        .setup-wrap {
+          max-width: 1120px;
           margin: 0 auto;
         }
-        .tgreg-stack {
-          display: grid;
-          gap: 14px;
+
+        .setup-shell {
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 24px;
+          padding: 18px;
+          background: rgba(255,255,255,0.05);
+          backdrop-filter: blur(12px);
         }
-        .tgreg-card {
-          background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 14px;
-          padding: 14px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-        }
-        .tgreg-hero {
-          padding: 16px;
-          border-radius: 16px;
-          border: 1px solid rgba(255,255,255,0.10);
-          background: radial-gradient(circle at top right, rgba(59,130,246,0.12), rgba(255,255,255,0.02));
-        }
-        .tgreg-title {
-          font-size: 1.35rem;
-          font-weight: 800;
-          line-height: 1.2;
-          margin-bottom: 6px;
-          color: #f8fbff;
-        }
-        .tgreg-sub {
-          color: #c8d9ff;
-          line-height: 1.4;
-          font-size: 0.95rem;
-        }
-        .tgreg-stepper {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0,1fr));
-          gap: 8px;
-          margin-top: 14px;
-        }
-        .tgreg-step {
-          border-radius: 10px;
-          border: 1px solid rgba(255,255,255,0.09);
-          padding: 10px 8px;
+
+        .setup-head {
           text-align: center;
-          background: rgba(255,255,255,0.015);
-        }
-        .tgreg-step.active {
-          border-color: rgba(96,165,250,0.55);
-          background: rgba(59,130,246,0.16);
-          box-shadow: inset 0 0 0 1px rgba(96,165,250,0.25);
-        }
-        .tgreg-step.done {
-          border-color: rgba(34,197,94,0.45);
-          background: rgba(34,197,94,0.12);
-        }
-        .tgreg-step-num {
-          font-size: 0.8rem;
-          opacity: 0.9;
-          margin-bottom: 4px;
-        }
-        .tgreg-step-name {
-          font-size: 0.82rem;
-          font-weight: 700;
-          line-height: 1.15;
+          margin-bottom: 18px;
         }
 
-        .tgreg-main {
-          display: grid;
-          grid-template-columns: 1.15fr 0.85fr;
-          gap: 14px;
+        .setup-head h1 {
+          margin: 0 0 8px;
+          font-size: clamp(2rem, 4vw, 3.6rem);
+          line-height: 1.02;
+          font-weight: 900;
+          letter-spacing: -0.03em;
         }
 
-        .tgreg-panelTitle {
-          font-size: 1rem;
-          font-weight: 800;
-          margin-bottom: 10px;
-          color: #fff;
-        }
-
-        .tgreg-detailGrid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-          margin-bottom: 12px;
-        }
-
-        .tgreg-field {
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
-          background: rgba(255,255,255,0.015);
-          padding: 10px;
-        }
-        .tgreg-fieldLabel {
-          font-size: 0.78rem;
-          color: #b7c8ee;
-          margin-bottom: 6px;
-          font-weight: 600;
-        }
-        .tgreg-fieldValue {
-          color: #fff;
-          font-weight: 700;
-          word-break: break-all;
-        }
-        .tgreg-input {
-          width: 100%;
-          background: #0b1b52;
-          color: #fff;
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-weight: 600;
-          outline: none;
-        }
-
-        .tgreg-statePill {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          border-radius: 999px;
-          padding: 8px 12px;
-          font-weight: 700;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.02);
-          margin-bottom: 12px;
-          color: #eef4ff;
-        }
-        .tgreg-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 999px;
-          background: #60a5fa;
-          display: inline-block;
-        }
-        .tgreg-dot.ok { background: #22c55e; }
-        .tgreg-dot.warn { background: #f59e0b; }
-        .tgreg-dot.err { background: #ef4444; }
-
-        .tgreg-primaryBtn {
-          width: 100%;
-          border: 0;
-          border-radius: 12px;
-          padding: 14px 16px;
-          font-weight: 800;
-          font-size: 1rem;
-          cursor: pointer;
-          color: #fff;
-          background: linear-gradient(180deg, #2563eb, #1d4ed8);
-          box-shadow: 0 8px 20px rgba(37,99,235,0.35);
-        }
-        .tgreg-primaryBtn:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-          box-shadow: none;
-        }
-
-        .tgreg-secondaryRow {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-          margin-top: 10px;
-        }
-        .tgreg-ghostBtn, .tgreg-dangerBtn {
-          width: 100%;
-          border-radius: 10px;
-          padding: 11px 12px;
-          font-weight: 700;
-          cursor: pointer;
-          background: rgba(255,255,255,0.02);
-        }
-        .tgreg-ghostBtn {
-          color: #dbeafe;
-          border: 1px solid rgba(255,255,255,0.12);
-        }
-        .tgreg-dangerBtn {
-          color: #fbbf24;
-          border: 1px solid rgba(245,158,11,0.45);
-        }
-        .tgreg-ghostBtn:disabled, .tgreg-dangerBtn:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-        }
-
-        .tgreg-msg {
-          margin-top: 12px;
-          border-radius: 10px;
-          padding: 12px 13px;
-          border: 1px solid rgba(255,255,255,0.12);
-          line-height: 1.35;
-          font-weight: 600;
-          word-break: break-word;
-        }
-        .tgreg-msg.info {
-          background: rgba(37,99,235,0.12);
-          border-color: rgba(96,165,250,0.28);
-          color: #eaf2ff;
-        }
-        .tgreg-msg.error {
-          background: rgba(127, 29, 29, 0.18);
-          border-color: rgba(248,113,113,0.28);
-          color: #ffd4d4;
-        }
-        .tgreg-msg.success {
-          background: rgba(22,163,74,0.14);
-          border-color: rgba(74,222,128,0.28);
-          color: #dcfce7;
-        }
-        .tgreg-msg.warn {
-          background: #f3eadb;
-          border-color: #c08a25;
-          color: #2b1d0e;
-        }
-
-        .tgreg-list {
+        .setup-head p {
           margin: 0;
-          padding-left: 18px;
-          line-height: 1.55;
-        }
-        .tgreg-list li + li { margin-top: 6px; }
-
-        .tgreg-sideBlock + .tgreg-sideBlock {
-          margin-top: 12px;
+          color: rgba(255,255,255,0.72);
+          font-size: clamp(1rem, 1.8vw, 1.15rem);
+          line-height: 1.45;
         }
 
-        .tgreg-kv {
+        .setup-main-grid {
           display: grid;
-          grid-template-columns: 120px 1fr;
-          gap: 8px 10px;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 16px;
           align-items: start;
         }
-        .tgreg-kvLabel {
-          color: #b7c8ee;
-          font-size: 0.86rem;
-          font-weight: 600;
-        }
-        .tgreg-kvValue {
-          color: #fff;
-          font-weight: 700;
-          word-break: break-word;
-        }
-        .tgreg-mono {
-          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-          font-size: 0.88rem;
+
+        .setup-main-grid.single-column {
+          max-width: 760px;
+          margin: 0 auto;
         }
 
-        @media (max-width: 900px) {
-          .tgreg-main {
-            grid-template-columns: 1fr;
-          }
+        .setup-primary {
+          min-width: 0;
+        }
+
+        .step-stack {
+          display: grid;
+          gap: 12px;
+        }
+
+        .step-card {
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 20px;
+          background: rgba(0,0,0,0.22);
+          overflow: hidden;
+        }
+
+        .step-card.locked {
+          opacity: 0.8;
+        }
+
+        .step-card.open {
+          border-color: rgba(45,125,210,0.45);
+          box-shadow: 0 0 0 1px rgba(45,125,210,0.18) inset;
+        }
+
+        .step-head-btn {
+          width: 100%;
+          border: 0;
+          background: transparent;
+          color: inherit;
+          padding: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          cursor: pointer;
+          text-align: left;
+        }
+
+        .step-head-left {
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+          min-width: 0;
+        }
+
+        .step-title {
+          font-size: 1.08rem;
+          font-weight: 900;
+          line-height: 1.15;
+          margin-bottom: 4px;
+        }
+
+        .step-sub {
+          color: rgba(255,255,255,0.68);
+          line-height: 1.45;
+          font-size: 0.95rem;
+        }
+
+        .step-chevron {
+          font-size: 1.4rem;
+          font-weight: 900;
+          color: rgba(255,255,255,0.78);
+          flex: 0 0 auto;
+        }
+
+        .u-step-icon {
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.14);
+          background: rgba(255,255,255,0.05);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          flex: 0 0 auto;
+        }
+
+        .u-step-icon.done {
+          background: rgba(37,165,95,0.2);
+          border-color: rgba(37,165,95,0.35);
+          color: rgba(185,255,210,0.96);
+        }
+
+        .u-step-icon.active {
+          background: rgba(45,125,210,0.18);
+          border-color: rgba(45,125,210,0.35);
+          color: #8dc2ff;
+        }
+
+        .u-step-icon.locked {
+          color: rgba(255,255,255,0.55);
+        }
+
+        .step-body {
+          padding: 0 14px 14px;
+          display: grid;
+          gap: 12px;
+        }
+
+        .step-note {
+          padding: 12px;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.76);
+          line-height: 1.45;
+          font-size: 0.95rem;
+        }
+
+        .btn {
+          border: 0;
+          border-radius: 14px;
+          padding: 13px 16px;
+          font-size: 1rem;
+          font-weight: 900;
+          cursor: pointer;
+          transition: opacity 0.18s ease, transform 0.06s ease, filter 0.18s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+          filter: brightness(1.04);
+        }
+
+        .btn:active:not(:disabled) {
+          transform: translateY(1px);
+        }
+
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-primary {
+          background: #2d7dd2;
+          color: #fff;
+        }
+
+        .btn-success {
+          background: #25a55f;
+          color: #fff;
+        }
+
+        .btn-secondary {
+          background: rgba(255,255,255,0.04);
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .btn-soft {
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .value-box,
+        .url-box {
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.04);
+          border-radius: 14px;
+          padding: 12px 14px;
+          line-height: 1.45;
+          color: rgba(255,255,255,0.88);
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+
+        .qr-wrap {
+          display: grid;
+          gap: 12px;
+          padding-top: 4px;
+        }
+
+        .qr-box {
+          background: #fff;
+          padding: 12px;
+          border-radius: 18px;
+          width: fit-content;
+          margin: 0 auto;
+          max-width: 100%;
+        }
+
+        .success-panel {
+          border: 1px solid rgba(37,165,95,0.35);
+          background: rgba(37,165,95,0.14);
+          border-radius: 16px;
+          padding: 14px;
+        }
+
+        .success-title {
+          font-size: 1rem;
+          font-weight: 900;
+          margin-bottom: 6px;
+        }
+
+        .success-sub {
+          color: rgba(255,255,255,0.82);
+          line-height: 1.5;
+        }
+
+        .toast-bar {
+          margin-top: 14px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.05);
+          font-weight: 800;
+          line-height: 1.45;
+        }
+
+        .toast-bar.success {
+          border-color: rgba(37,165,95,0.35);
+          background: rgba(37,165,95,0.14);
+        }
+
+        .toast-bar.error {
+          border-color: rgba(239,68,68,0.35);
+          background: rgba(239,68,68,0.14);
         }
 
         @media (max-width: 640px) {
-          .tgreg-stepper {
-            grid-template-columns: 1fr 1fr;
+          .setup-page {
+            padding: 10px 8px 22px;
           }
-          .tgreg-detailGrid {
-            grid-template-columns: 1fr;
+
+          .setup-shell {
+            padding: 12px;
+            border-radius: 18px;
           }
-          .tgreg-secondaryRow {
-            grid-template-columns: 1fr;
+
+          .step-head-btn {
+            padding: 12px;
           }
-          .tgreg-kv {
-            grid-template-columns: 1fr;
-            gap: 4px;
+
+          .step-body {
+            padding: 0 12px 12px;
+          }
+
+          .step-title {
+            font-size: 1rem;
+          }
+
+          .step-sub {
+            font-size: 0.9rem;
+          }
+
+          .btn-full-mobile {
+            width: 100%;
+          }
+
+          .qr-box svg {
+            width: min(72vw, 220px);
+            height: min(72vw, 220px);
           }
         }
       `}</style>
-
-      <div className="tgreg-wrap">
-        <div className="tgreg-stack">
-          {/* HERO / HEADER */}
-          <section className="tgreg-hero">
-            <div className="tgreg-title">Telegram Wallet Registration</div>
-            <div className="tgreg-sub">
-              Link your Telegram account to your wallet in a secure two-step flow.
-              First confirm on this page, then finish inside the Telegram bot with <b>/approve</b>.
-            </div>
-
-            <div className="tgreg-stepper" aria-label="Registration steps">
-              {[1, 2, 3, 4].map((n) => {
-                const cls =
-                  n < currentStep
-                    ? "tgreg-step done"
-                    : n === currentStep
-                    ? "tgreg-step active"
-                    : "tgreg-step";
-                return (
-                  <div key={n} className={cls}>
-                    <div className="tgreg-step-num">Step {n}</div>
-                    <div className="tgreg-step-name">{stepLabel(n)}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* MAIN TWO COLUMN LAYOUT */}
-          <section className="tgreg-main">
-            {/* LEFT: Action flow */}
-            <div className="tgreg-card">
-
-
-              <div
-                className="tgreg-statePill"
-                title={stateText}
-              >
-                <span
-                  className={`tgreg-dot ${
-                    errorText ? "err" : flowState === "done" || flowState === "confirmed_step1" ? "ok" : currentStep >= 3 ? "warn" : ""
-                  }`}
-                />
-                <span>{stateText}</span>
-              </div>
-
-              <div className="tgreg-field" style={{ marginBottom: 12 }}>
-                <div className="tgreg-fieldLabel">Wallet</div>
-                <div className="tgreg-fieldValue tgremono">
-                  {currentWalletDisplay === "—"
-                    ? "Not connected yet"
-                    : account
-                    ? `(${shortAddr(account)})`
-                    : currentWalletDisplay}
-                </div>
-                <div
-                  style={{
-                    marginTop: 8,
-                    color: jwt ? "#4ade80" : "#93c5fd",
-                    fontWeight: 700,
-                    fontSize: "0.92rem",
-                  }}
-                >
-                  {jwt
-                    ? "Wallet session is active on this device."
-                    : "Wallet session not active yet (sign in required)."}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="tgreg-primaryBtn"
-                onClick={primaryAction.onClick}
-                disabled={primaryAction.disabled}
-              >
-                {primaryAction.label}
-              </button>
-
-              <div className="tgreg-secondaryRow">
-                <button
-                  type="button"
-                  className="tgreg-ghostBtn"
-                  onClick={() => window.open(TELEGRAM_BOT_URL, "_blank", "noopener,noreferrer")}
-                  disabled={busy}
-                >
-                  Open Telegram Bot
-                </button>
-
-                <button
-                  type="button"
-                  className="tgreg-ghostBtn"
-                  onClick={() => refreshLinkStatus()}
-                  disabled={busy || !code || !jwt}
-                  title={!jwt ? "Sign in first to check status" : "Refresh link status"}
-                >
-                  Refresh Status
-                </button>
-
-                <button
-                  type="button"
-                  className="tgreg-dangerBtn"
-                  onClick={clearSession}
-                  disabled={busy}
-                  style={{ gridColumn: "1 / -1" }}
-                >
-                  Clear Wallet Session
-                </button>
-              </div>
-
-              {!!statusFriendly && (
-                <div
-                  className={`tgreg-msg ${
-                    flowState === "done" || flowState === "confirmed_step1" ? "success" : "info"
-                  }`}
-                >
-                  {statusFriendly}
-                </div>
-              )}
-
-              {!!errorText && <div className="tgreg-msg error">{errorText}</div>}
-
-              {alreadyLinkedToDifferentWallet && (
-                <div className="tgreg-msg warn">
-                  This code appears tied to a different wallet. For security, re-linking should be handled by admin reset/manual flow.
-                </div>
-              )}
-
-              <div className="tgreg-msg warn">
-                <b>Two-step security flow:</b>
-                <div style={{ marginTop: 6 }}>
-                  1) Confirm wallet on this page
-                </div>
-                <div>
-                  2) Return to Telegram bot and run <b>/approve</b>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: Support / status */}
-            <div>
-              <div className="tgreg-card tgreg-sideBlock">
-                <div className="tgreg-panelTitle">What to do now</div>
-                <ol className="tgreg-list">
-                  <li>
-                    <b>Connect Wallet</b> (this page)
-                  </li>
-                  <li>
-                    <b>Sign In with Wallet</b> (creates your local wallet session)
-                  </li>
-                  <li>
-                    <b>Confirm Wallet (Step 1)</b> (binds wallet to the Telegram request)
-                  </li>
-                  <li>
-                    Go back to Telegram and run <b>/approve</b> to finish
-                  </li>
-                </ol>
-              </div>
-
-              <div className="tgreg-card tgreg-sideBlock">
-                <div className="tgreg-panelTitle">Link Status</div>
-                <div className="tgreg-kv">
-                  <div className="tgreg-kvLabel">API Base</div>
-                  <div className="tgreg-kvValue tgreg-mono">
-                    {apiBase || "— (resolver not ready / missing)"}
-                  </div>
-
-                  <div className="tgreg-kvLabel">Module</div>
-                  <div className="tgreg-kvValue tgreg-mono">{moduleId || "—"}</div>
-
-                  <div className="tgreg-kvLabel">Code</div>
-                  <div className="tgreg-kvValue tgreg-mono">{code || "—"}</div>
-
-                  <div className="tgreg-kvLabel">Server State</div>
-                  <div className="tgreg-kvValue tgreg-mono">
-                    {String(linkStatus?.state || linkStatus?.status || "—")}
-                  </div>
-
-                  <div className="tgreg-kvLabel">Linked / Pending Wallet</div>
-                  <div className="tgreg-kvValue tgreg-mono">
-                    {String(
-                      linkStatus?.pendingWallet ||
-                        linkStatus?.linkedWallet ||
-                        linkStatus?.wallet ||
-                        linkStatus?.address ||
-                        "—"
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="tgreg-card tgreg-sideBlock">
-
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
     </div>
   );
 }
-
-
-
-//
-// <div className="tgreg-panelTitle">Bind Wallet</div>
-//
-// <div className="tgreg-detailGrid">
-//   <div className="tgreg-field">
-//     <div className="tgreg-fieldLabel">Module ID</div>
-//     <input
-//       value={moduleId}
-//       onChange={(e) => setModuleId(e.target.value)}
-//       className="tgreg-input"
-//     />
-//   </div>
-//   <div className="tgreg-field">
-//     <div className="tgreg-fieldLabel">Link Code</div>
-//     <input
-//       value={code}
-//       onChange={(e) => setCode(e.target.value)}
-//       className="tgreg-input"
-//     />
-//   </div>
-// </div>
-
-//   <div className="tgreg-panelTitle">Why this is secure</div>
-  // <ul className="tgreg-list">
-  //   <li>Someone with only the code cannot finish without your wallet sign-in/signature.</li>
-  //   <li>Someone with only wallet access still cannot finish without Telegram bot approval.</li>
-  //   <li>The Telegram bot performs the final approval step.</li>
-  // </ul>

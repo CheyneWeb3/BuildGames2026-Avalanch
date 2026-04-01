@@ -18,96 +18,156 @@ import {
   Fade,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { formatUnits } from "ethers";
 import { useApiBase } from "../../ApiBaseContext";
+
 
 declare global {
   interface Window {
-    Telegram?: any;
+    google?: any;
     visualViewport?: VisualViewport;
   }
 }
 
-/** =========================
- *  Config
- *  ========================= */
-const DEFAULT_CASHIER_URL = "https://yetitipbot-poc.netlify.app/#/home";
 
-// NOTE (Vite/Netlify): only env vars prefixed with VITE_ are exposed to the frontend.
-// Cashier URL can be overridden via VITE_CASHIER_URL; API base is resolved on-chain.
+import UnregisteredGooglePrompt from "../../components/google/UnregisteredGooglePrompt";
+import UnregisteredGoogleRegisterButton from "../../components/google/UnregisteredGoogleRegisterButton";
+
+
+
+const LS_JWT = "haus_user_jwt";
+const TARGET_CHAIN_ID = 43113;
+const DEFAULT_CASHIER_URL = "https://thehaus-fuji-mvp.netlify.app/#/home";
+
+const AUTH_GOOGLE_VERIFY_PATH = "/auth/google/verify";
+const ME_BALANCES_PATH = "/me/balances";
+
+const BJ_INFO = "/me/blackjack/info";
+const BJ_CURRENT = "/me/blackjack/current";
+const BJ_START = "/me/blackjack/start";
+const BJ_HIT = "/me/blackjack/hit";
+const BJ_STAND = "/me/blackjack/stand";
+const BJ_DOUBLE = "/me/blackjack/double";
+const BJ_HISTORY = "/me/blackjack/history";
 
 function getCashierUrl() {
-  // allow override via query param ?cashier=https://...
   try {
     const u = new URL(window.location.href);
     const qp = u.searchParams.get("cashier");
     if (qp && qp.startsWith("http")) return qp;
   } catch {}
 
-  // Vite env (Netlify)
   const envUrl = (import.meta as any).env?.VITE_CASHIER_URL;
   if (envUrl && String(envUrl).startsWith("http")) return String(envUrl);
 
   return DEFAULT_CASHIER_URL;
 }
 
-const AUTH_TG_PATH = "/auth/tg";
-const ME_BALANCES_PATH = "/mini/me/balances";
-
-/**
- * Deposit link:
- * We *optionally* fetch a session-bound deposit URL from the API, but we NEVER fall back
- * to the API host (because that would open `${API_BASE}/deposit`). If the API doesn't
- * return a valid cashier URL, we fall back to the Cashier app URL.
- *
- * Security/consistency: we only accept a returned URL if it matches the Cashier origin.
- *
- * IMPORTANT: adjust these candidates to match your API if needed.
- */
-const DEPOSIT_LINK_CANDIDATES = [
-  "/mini/me/deposit", // preferred
-  "/mini/me/deposit-link",
-  "/mini/deposit",
-  "/mini/deposit-link",
-  "/tg/deposit",
-  "/tg/deposit-link",
-];
-
-// Blackjack endpoints
-const BJ_START = "/mini/blackjack/start";
-const BJ_STATUS = "/mini/blackjack/status";
-const BJ_HIT = "/mini/blackjack/hit";
-const BJ_STAND = "/mini/blackjack/stand";
-const BJ_DOUBLE = "/mini/blackjack/double";
-const BJ_SPLIT = "/mini/blackjack/split";
-
-/** =========================
- *  Types
- *  ========================= */
-type TgAuthResp = {
-  ok: boolean;
-  session?: string;
-  telegramUserId?: string;
-  telegramHandle?: string;
-  firstName?: string;
+type GoogleVerifyResponse = {
+  ok?: boolean;
+  linked?: boolean;
+  address?: string;
+  token?: string;
+  jwt?: string;
+  authProvider?: string;
+  googleLinkToken?: string;
+  googleSub?: string;
+  email?: string | null;
+  name?: string | null;
   error?: string;
 };
 
-type MiniBalances = {
-  ok: boolean;
-  railsPaused: boolean;
-  telegramUserId: string;
-  wallet: string;
-  walletVerified: boolean;
-  offchain: { raw: string; human: string };
-  error?: string;
+type BalanceItem = {
+  chainId: number;
+  token: string;
+  symbol?: string;
+  decimals?: number;
+  balanceRaw?: string;
+  availableRaw?: string;
+  heldRaw?: string;
+  totalRaw?: string;
+  balanceHuman?: string;
+  updatedAt?: string;
 };
 
-type DepositLinkResp = {
-  ok: boolean;
-  url?: string;
-  link?: string;
-  depositUrl?: string;
-  error?: string;
+type TokenOption = {
+  key: string;
+  token: string;
+  symbol: string;
+  decimals: number;
+  availableRaw: string;
+  heldRaw: string;
+  availableHuman: string;
+};
+
+type TokenListToken = {
+  chainId: number;
+  address: string;
+  symbol?: string;
+  decimals?: number;
+};
+
+type BlackjackInfoResponse = {
+  ok?: boolean;
+  chainId: number;
+  token: string;
+  symbol: string;
+  decimals: number;
+  vaultId?: string;
+  treasuryId?: string;
+  treasuryAccountId?: string;
+  feeTreasuryAccountId?: string;
+  lossFeeBps?: number;
+  usdcOnly?: boolean;
+  blackjackPayout?: string;
+  dealerHitsSoft17?: boolean;
+  actions?: string[];
+};
+
+type RoundCard = {
+  rank: string;
+  suit: string;
+  value: number;
+  label: string;
+};
+
+type BlackjackRoundView = {
+  id: string;
+  chainId: number;
+  token: string;
+  symbol: string;
+  decimals: number;
+  betRaw: string;
+  doubled: boolean;
+  status: string;
+  payoutRaw: string;
+  playerCards: RoundCard[];
+  playerTotal: number;
+  dealerCards: RoundCard[];
+  dealerTotal: number;
+  dealerResolvedCards?: RoundCard[];
+  dealerResolvedTotal?: number;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string | null;
+  clientRequestId?: string | null;
+};
+
+type BlackjackCurrentResponse = {
+  ok?: boolean;
+  round: BlackjackRoundView | null;
+};
+
+type BlackjackStartResponse = {
+  ok?: boolean;
+  treasuryId?: string;
+  treasuryAccountId?: string;
+  round: BlackjackRoundView;
+};
+
+type BlackjackHistoryResponse = {
+  ok?: boolean;
+  items: BlackjackRoundView[];
 };
 
 type BJCard = { r: string; s: string };
@@ -148,9 +208,6 @@ type BJState = {
   updatedAtMs?: number;
 };
 
-/** =========================
- *  Theme tokens
- *  ========================= */
 const UI = {
   textMain: "rgba(240,247,255,0.94)",
   textDim: "rgba(240,247,255,0.72)",
@@ -168,63 +225,65 @@ function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
 }
 
-function getTelegramInitData(): string {
-  const tg = window.Telegram?.WebApp;
-  return String(tg?.initData || "").trim();
+function getJwt(): string {
+  return localStorage.getItem(LS_JWT) || "";
 }
-function isTelegramWebApp(): boolean {
-  return !!window.Telegram?.WebApp;
+function setJwt(jwt: string) {
+  localStorage.setItem(LS_JWT, jwt);
 }
-
-function isSameOriginAsCashier(url: string, cashierUrl: string): boolean {
-  try {
-    const cash = new URL(cashierUrl);
-    const u = new URL(url);
-    return u.origin === cash.origin;
-  } catch {
-    return false;
-  }
+function clearJwt() {
+  localStorage.removeItem(LS_JWT);
 }
 
-function getSession(): string {
-  return localStorage.getItem("yeti_tg_session") || "";
-}
-function setSession(s: string) {
-  localStorage.setItem("yeti_tg_session", s);
-}
-function clearSession() {
-  localStorage.removeItem("yeti_tg_session");
-}
-
-async function apiJson<T>(apiBase: string, path: string, init?: RequestInit): Promise<T> {
-  const url = `${apiBase}${path}`;
+async function apiRequest<T>(apiBase: string, path: string, jwt: string, init?: RequestInit): Promise<T> {
+  const cleanBase = String(apiBase || "").replace(/\/+$/, "");
+  const url = `${cleanBase}${path}`;
   const res = await fetch(url, {
     ...init,
     headers: {
+      "Content-Type": "application/json",
+      ...(jwt ? { authorization: `Bearer ${jwt}` } : {}),
       ...(init?.headers || {}),
-      "content-type": "application/json",
     },
   });
 
   const txt = await res.text().catch(() => "");
-  let js: any = null;
+  let data: any = null;
   try {
-    js = txt ? JSON.parse(txt) : null;
+    data = txt ? JSON.parse(txt) : null;
   } catch {
-    js = null;
+    data = { raw: txt };
   }
 
   if (!res.ok) {
-    const msg = js?.error ? String(js.error) : txt || `${res.status} ${res.statusText}`;
-    throw new Error(msg);
+    throw new Error(String(data?.error || data?.message || data?.raw || `${res.status} ${res.statusText}`));
   }
 
-  return (js ?? ({} as any)) as T;
+  return data as T;
 }
 
-/** =========================
- *  Utils
- *  ========================= */
+function safeBigInt(v?: string | number | bigint | null) {
+  try {
+    if (typeof v === "bigint") return v;
+    const s = String(v ?? "0").trim();
+    return /^-?\d+$/.test(s) ? BigInt(s) : 0n;
+  } catch {
+    return 0n;
+  }
+}
+
+function formatAmount(raw: string | undefined, decimals: number, maxFrac = 6) {
+  try {
+    const full = formatUnits(safeBigInt(raw), decimals);
+    if (!full.includes(".")) return full;
+    const [a, b] = full.split(".");
+    const trimmed = (b || "").slice(0, maxFrac).replace(/0+$/g, "");
+    return trimmed ? `${a}.${trimmed}` : a;
+  } catch {
+    return "0";
+  }
+}
+
 function safeNumFromString(s: string): number {
   const n = Number(String(s || "").trim());
   return Number.isFinite(n) ? n : 0;
@@ -239,13 +298,14 @@ function clampBetHuman(b: string) {
   return parts.length <= 2 ? cleaned : `${parts[0]}.${parts.slice(1).join("")}`;
 }
 
-// credits display: ZERO decimals
-function formatCreditsZero(human?: string) {
-  const s = String(human ?? "").trim();
-  if (!s) return "0";
-  const n = Number(s);
-  if (!Number.isFinite(n)) return s.split(".")[0] || s;
-  return String(Math.floor(n));
+function multiplyHumanAmount(v: string, mult: number): string {
+  const n = Number(String(v || "0"));
+  if (!Number.isFinite(n) || n <= 0) return "0";
+  const out = n * mult;
+  const s = String(out);
+  return s.includes(".")
+    ? s.replace(/(\.\d*?[1-9])0+$/g, "$1").replace(/\.0+$/g, "")
+    : s;
 }
 
 function msToShort(ms: number) {
@@ -257,9 +317,29 @@ function msToShort(ms: number) {
   return r ? `${m}m ${r}s` : `${m}m`;
 }
 
-/** =========================
- *  Hand math / display
- *  ========================= */
+function normalizeBalances(raw: any): BalanceItem[] {
+  const items = Array.isArray(raw?.items)
+    ? raw.items
+    : Array.isArray(raw?.balances)
+      ? raw.balances
+      : Array.isArray(raw)
+        ? raw
+        : [];
+
+  return items.map((x: any) => ({
+    chainId: Number(x.chainId || 0),
+    token: String(x.token || "").toLowerCase(),
+    symbol: String(x.symbol || ""),
+    decimals: Number(x.decimals ?? 18),
+    balanceRaw: String(x.balanceRaw ?? x.balance ?? x.totalRaw ?? "0"),
+    availableRaw: String(x.availableRaw ?? x.balanceRaw ?? x.balance ?? x.totalRaw ?? "0"),
+    heldRaw: String(x.heldRaw ?? "0"),
+    totalRaw: String(x.totalRaw ?? x.balanceRaw ?? x.balance ?? "0"),
+    balanceHuman: typeof x.balanceHuman === "string" ? x.balanceHuman : undefined,
+    updatedAt: String(x.updatedAt || ""),
+  }));
+}
+
 function normalizeSuit(s: string) {
   if (s === "♥") return "♥️";
   if (s === "♦") return "♦️";
@@ -308,6 +388,7 @@ function outcomeMeta(outcomeRaw?: string | null) {
       return { emoji: "💥", label: "BUST", tone: "bad" as const };
     case "DEALER_BUST":
       return { emoji: "✅", label: "DEALER BUST", tone: "good" as const };
+    case "BLACKJACK":
     case "PLAYER_BLACKJACK":
       return { emoji: "🟩", label: "BLACKJACK!", tone: "good" as const };
     case "DEALER_BLACKJACK":
@@ -332,48 +413,122 @@ function profitTone(profitHuman?: string) {
   return { tone: "mid" as const, text: p };
 }
 
-/** =========================
- *  Viewport hook (Telegram-safe)
- *  ========================= */
+function mapRoundCard(c: RoundCard): BJCard {
+  return {
+    r: String(c?.rank || "?"),
+    s: normalizeSuit(String(c?.suit || "")),
+  };
+}
+
+function isResolvedRoundStatus(status?: string) {
+  return [
+    "PLAYER_BUST",
+    "DEALER_BUST",
+    "PLAYER_WIN",
+    "DEALER_WIN",
+    "BLACKJACK",
+    "DEALER_BLACKJACK",
+    "PUSH",
+    "CANCELLED",
+  ].includes(String(status || ""));
+}
+
+function roundToBjState(round: BlackjackRoundView | null): BJState | null {
+  if (!round) return null;
+
+  const statusRaw = String(round.status || "");
+  const resolved = isResolvedRoundStatus(statusRaw);
+
+  const playerCards = Array.isArray(round.playerCards) ? round.playerCards.map(mapRoundCard) : [];
+  const dealerCards = Array.isArray(round.dealerCards) ? round.dealerCards.map(mapRoundCard) : [];
+  const dealerResolvedCards = Array.isArray(round.dealerResolvedCards)
+    ? round.dealerResolvedCards.map(mapRoundCard)
+    : [];
+
+  const betHuman = formatAmount(round.betRaw, Number(round.decimals || 6), 6);
+  const totalBetHuman = round.doubled ? multiplyHumanAmount(betHuman, 2) : betHuman;
+  const payoutHuman = formatAmount(round.payoutRaw || "0", Number(round.decimals || 6), 6);
+
+  const totalBetRaw = safeBigInt(round.betRaw) * (round.doubled ? 2n : 1n);
+  const payoutRaw = safeBigInt(round.payoutRaw || "0");
+  const profitRaw = payoutRaw - totalBetRaw;
+  const profitHuman = formatAmount(String(profitRaw), Number(round.decimals || 6), 6);
+
+  let status: BJState["status"] = "ACTIVE";
+  if (statusRaw === "DEALER_TURN") status = "DEALER_TURN";
+  else if (statusRaw === "CANCELLED") status = "CANCELLED";
+  else if (resolved) status = "RESOLVED";
+
+  const canHit = status === "ACTIVE";
+  const canStand = status === "ACTIVE";
+  const canDouble = status === "ACTIVE" && !round.doubled && playerCards.length === 2;
+
+  const dealerVisible =
+    status === "RESOLVED" || status === "CANCELLED"
+      ? dealerResolvedCards.length
+        ? dealerResolvedCards
+        : dealerCards
+      : dealerCards;
+
+  const dealerVisibleTotal =
+    status === "RESOLVED" || status === "CANCELLED"
+      ? Number(round.dealerResolvedTotal ?? round.dealerTotal ?? computeHandTotal(dealerVisible))
+      : Number(round.dealerTotal ?? computeHandTotal(dealerCards));
+
+  return {
+    ok: true,
+    gameId: String(round.id || ""),
+    status,
+    outcome: resolved || status === "CANCELLED" ? statusRaw : null,
+    outcomeHands: [resolved || status === "CANCELLED" ? statusRaw : null],
+    betHuman,
+    betHandsHuman: [betHuman],
+    totalBetHuman,
+    payoutHuman,
+    profitHuman,
+    playerHands: [playerCards],
+    activeHand: 0,
+    doubledHands: round.doubled ? [0] : [],
+    handTotals: [Number(round.playerTotal || computeHandTotal(playerCards))],
+    dealerUp: dealerCards,
+    dealerUpTotal: Number(round.dealerTotal || computeHandTotal(dealerCards)),
+    dealer: dealerVisible,
+    dealerShown: dealerVisible.length,
+    dealerVisibleTotal,
+    dealerTotal: dealerVisibleTotal,
+    dealerNextAtMs: status === "DEALER_TURN" ? Date.now() + 1200 : null,
+    canHit,
+    canStand,
+    canDouble,
+    canSplit: false,
+    expiresAtMs: Date.now() + 15 * 60 * 1000,
+    updatedAtMs: Date.parse(round.updatedAt || round.createdAt || new Date().toISOString()),
+  };
+}
+
 function useStableViewportHeight() {
   const [vh, setVh] = React.useState<number>(() => {
-    const tg = window.Telegram?.WebApp;
-    const tgh = Number(tg?.viewportHeight);
-    if (Number.isFinite(tgh) && tgh > 0) return tgh;
     const vv = window.visualViewport?.height;
     if (vv && vv > 0) return vv;
     return window.innerHeight || 700;
   });
 
   React.useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-
     const read = () => {
-      const tgh = Number(tg?.viewportHeight);
       const vv = window.visualViewport?.height;
-      const next =
-        Number.isFinite(tgh) && tgh > 0 ? tgh : vv && vv > 0 ? vv : window.innerHeight || 700;
-
+      const next = vv && vv > 0 ? vv : window.innerHeight || 700;
       setVh((prev) => (Math.abs(prev - next) > 1 ? next : prev));
       document.documentElement.style.setProperty("--app-vh", `${next}px`);
     };
 
     read();
-
     const onResize = () => read();
     window.addEventListener("resize", onResize);
     window.visualViewport?.addEventListener("resize", onResize);
 
-    try {
-      tg?.onEvent?.("viewportChanged", read);
-    } catch {}
-
     return () => {
       window.removeEventListener("resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
-      try {
-        tg?.offEvent?.("viewportChanged", read);
-      } catch {}
     };
   }, []);
 
@@ -400,9 +555,6 @@ function useBoxMeasure() {
   return { ref, h };
 }
 
-/** =========================
- *  Cards
- *  ========================= */
 type CardDims = {
   w: number;
   h: number;
@@ -551,7 +703,6 @@ function Fan({
     list.push({ c, k: `${c.r}${c.s}-${i}` });
   }
 
-  // Dealer ACTIVE: show 2 cards (upcard + facedown)
   if (forceHoleCard) {
     if (list.length === 0) list.push({ c: { r: "?", s: "?" }, k: "hole-0" });
     if (list.length === 1) list.push({ faceDown: true, k: "hole-1" });
@@ -589,9 +740,6 @@ function Fan({
   );
 }
 
-/** =========================
- *  Small turn toast (non-blocking)
- *  ========================= */
 type ToastState = {
   open: boolean;
   title: string;
@@ -659,9 +807,6 @@ function TurnToast({
   );
 }
 
-/** =========================
- *  Big CENTER overlay: YOU WIN / YOU LOSE / PUSH (non-blocking)
- *  ========================= */
 type CenterOverlayState = {
   open: boolean;
   text: string;
@@ -730,15 +875,10 @@ function CenterResultOverlay({ overlay }: { overlay: CenterOverlayState }) {
   );
 }
 
-/** =========================
- *  Bottom result toast overlay (NON-LAYOUT; fixes squashing)
- *  - Darker, readable background
- *  - Still tone-tinted for win/lose/push
- *  ========================= */
 type ResultToastState = {
   open: boolean;
   tone: "good" | "bad" | "mid";
-  title: string; // "YOU WIN" / "YOU LOSE" / "PUSH" / "CANCELLED"
+  title: string;
   net?: string;
   bet?: string;
 };
@@ -756,7 +896,6 @@ function ResultToastOverlay({
 }) {
   if (!toast.open) return null;
 
-  // darker base + subtle tone tint overlay
   const bgBase = "rgba(10,12,16,0.92)";
   const bgTint =
     toast.tone === "good"
@@ -860,9 +999,6 @@ function ResultToastOverlay({
   );
 }
 
-/** =========================
- *  Modal helper (only for bet/cashier)
- *  ========================= */
 function ModalShell({
   open,
   title,
@@ -905,9 +1041,6 @@ function ModalShell({
   );
 }
 
-/** =========================
- *  Gamebar helpers: fixed height, no greyed buttons
- *  ========================= */
 function Slot({ show, children, h }: { show: boolean; children: React.ReactNode; h: number }) {
   if (show) return <>{children}</>;
   return <Box sx={{ height: h, flex: 1, borderRadius: 2.2, opacity: 0 }} />;
@@ -950,23 +1083,35 @@ function ActionBtn({
   );
 }
 
-/** =========================
- *  Page
- *  ========================= */
 export default function BlackjackPage() {
   const API_BASE = useApiBase();
   const isWide = useMediaQuery("(min-width:900px)");
   const isMobile = useMediaQuery("(max-width:600px)");
 
-  // viewport + measures
   const vh = useStableViewportHeight();
   const headerM = useBoxMeasure();
   const dockM = useBoxMeasure();
-
   const CASHIER_URL = React.useMemo(() => getCashierUrl(), []);
 
+  const [tokenList, setTokenList] = React.useState<TokenListToken[]>([]);
 
-  // lock body scroll while mounted
+  React.useEffect(() => {
+    let dead = false;
+    (async () => {
+      try {
+        const r = await fetch("/tokenlist.json", { cache: "no-cache" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!dead) setTokenList((Array.isArray(j?.tokens) ? j.tokens : []) as TokenListToken[]);
+      } catch {
+        if (!dead) setTokenList([]);
+      }
+    })();
+    return () => {
+      dead = true;
+    };
+  }, []);
+
   React.useEffect(() => {
     const prevHtml = document.documentElement.style.overflow;
     const prevBody = document.body.style.overflow;
@@ -986,34 +1131,51 @@ export default function BlackjackPage() {
     };
   }, []);
 
+  const tokenMetaByChainAddr = React.useMemo(() => {
+    const m = new Map<string, { symbol: string; decimals: number }>();
+    for (const t of tokenList) {
+      const cid = Number(t?.chainId || 0);
+      const addr = String(t?.address || "").trim().toLowerCase();
+      if (cid && addr) {
+        m.set(`${cid}:${addr}`, {
+          symbol: String(t?.symbol || "").toUpperCase(),
+          decimals: Number(t?.decimals ?? 18),
+        });
+      }
+    }
+    return m;
+  }, [tokenList]);
+
   const [actionBusy, setActionBusy] = React.useState(false);
-  const [err, setErr] = React.useState<string>("");
+  const [googleBusy, setGoogleBusy] = React.useState(false);
+  const [err, setErr] = React.useState("");
 
-  const [tgLabel, setTgLabel] = React.useState<string>("");
-  const [bal, setBal] = React.useState<MiniBalances | null>(null);
-  const [signedIn, setSignedIn] = React.useState<boolean>(() => !!getSession());
+  const [needsRegistration, setNeedsRegistration] = React.useState(false);
+  const [googleLinkEmail, setGoogleLinkEmail] = React.useState("");
+  const [googleLinkName, setGoogleLinkName] = React.useState("");
+  const [googleLinkSub, setGoogleLinkSub] = React.useState("");
 
-  const [bet, setBet] = React.useState("10");
-  const [lastBet, setLastBet] = React.useState("10");
+  const [signedIn, setSignedIn] = React.useState<boolean>(() => !!getJwt());
+  const [walletLabel, setWalletLabel] = React.useState("");
+
+  const [balances, setBalances] = React.useState<BalanceItem[]>([]);
+  const [info, setInfo] = React.useState<BlackjackInfoResponse | null>(null);
+
+  const [bet, setBet] = React.useState("0.25");
+  const [lastBet, setLastBet] = React.useState("0.25");
   const [state, setState] = React.useState<BJState | null>(null);
+  const [rawRound, setRawRound] = React.useState<BlackjackRoundView | null>(null);
+  const [history, setHistory] = React.useState<BlackjackRoundView[]>([]);
 
-  // modals
   const [betModalOpen, setBetModalOpen] = React.useState(false);
   const [cashierOpen, setCashierOpen] = React.useState(false);
 
-  // cashier: deposit url (fetched from API)
-  const [depositUrl, setDepositUrl] = React.useState<string>("");
-  const [depositBusy, setDepositBusy] = React.useState<boolean>(false);
-
-  // small toast (turn/errors)
   const [turnToast, setTurnToast] = React.useState<ToastState>({ open: false, title: "" });
   const turnTimer = React.useRef<number | null>(null);
 
-  // center overlay (YOU WIN / YOU LOSE / PUSH)
   const [overlay, setOverlay] = React.useState<CenterOverlayState>({ open: false, text: "", tone: "mid" });
   const overlayTimer = React.useRef<number | null>(null);
 
-  // bottom result toast (overlay; DOES NOT change layout)
   const [resultToast, setResultToast] = React.useState<ResultToastState>({
     open: false,
     tone: "mid",
@@ -1026,6 +1188,40 @@ export default function BlackjackPage() {
     stateRef.current = state;
   }, [state]);
 
+  const googleDesktopBtnRef = React.useRef<HTMLDivElement | null>(null);
+  const googleMobileBtnRef = React.useRef<HTMLDivElement | null>(null);
+  const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
+
+  const [dealReveal, setDealReveal] = React.useState<{
+    active: boolean;
+    playerCards: BJCard[];
+    dealerCards: BJCard[];
+    step: number;
+    roundId: string;
+  }>({
+    active: false,
+    playerCards: [],
+    dealerCards: [],
+    step: 0,
+    roundId: "",
+  });
+
+  const dealTimersRef = React.useRef<number[]>([]);
+
+  function clearDealTimers() {
+    for (const t of dealTimersRef.current) window.clearTimeout(t);
+    dealTimersRef.current = [];
+  }
+
+  React.useEffect(() => {
+    return () => {
+      clearDealTimers();
+      if (turnTimer.current) window.clearTimeout(turnTimer.current);
+      if (overlayTimer.current) window.clearTimeout(overlayTimer.current);
+      if (resultTimer.current) window.clearTimeout(resultTimer.current);
+    };
+  }, []);
+
   function showTurnToast(next: ToastState, autoMs = 900) {
     if (turnTimer.current) window.clearTimeout(turnTimer.current);
     setTurnToast(next);
@@ -1037,7 +1233,7 @@ export default function BlackjackPage() {
     }
   }
 
-  function showCenterOverlay(next: Omit<CenterOverlayState, "open">, autoMs = 2000 /* doubled */) {
+  function showCenterOverlay(next: Omit<CenterOverlayState, "open">, autoMs = 2000) {
     if (overlayTimer.current) window.clearTimeout(overlayTimer.current);
     setOverlay({ open: true, ...next });
     overlayTimer.current = window.setTimeout(() => {
@@ -1057,197 +1253,361 @@ export default function BlackjackPage() {
     }
   }
 
-  React.useEffect(() => {
-    return () => {
-      if (turnTimer.current) window.clearTimeout(turnTimer.current);
-      if (overlayTimer.current) window.clearTimeout(overlayTimer.current);
-      if (resultTimer.current) window.clearTimeout(resultTimer.current);
-    };
-  }, []);
-
-  // Telegram UX
-  React.useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) return;
+  function decodeJwtSubLabel(token: string): string {
     try {
-      tg.ready?.();
-      tg.expand?.();
-      const u = tg.initDataUnsafe?.user;
-      if (u?.username) setTgLabel(`@${u.username}`);
-      else if (u?.first_name) setTgLabel(String(u.first_name));
-    } catch {}
-  }, []);
+      const payload = token.split(".")[1];
+      if (!payload) return "";
+      const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+      return String(json?.sub || "").trim();
+    } catch {
+      return "";
+    }
+  }
 
-  async function ensureAuth(): Promise<string> {
-    const existing = getSession();
-    if (existing) return existing;
+  function announceResolvedRound(round: BlackjackRoundView) {
+    const mapped = roundToBjState(round);
+    if (!mapped) return;
 
-    const initData = getTelegramInitData();
-    if (!initData) {
-      const msg = isTelegramWebApp()
-        ? "No initData found (Telegram didn’t pass auth payload)."
-        : "Open this page from Telegram (Mini App) so initData is available.";
-      throw new Error(msg);
+    const meta = outcomeMeta(mapped.outcome ?? round.status ?? null);
+
+    if (meta.label === "CANCELLED") {
+      showCenterOverlay({ text: "CANCELLED", tone: "mid" }, 2000);
+    } else if (meta.tone === "good") {
+      showCenterOverlay({ text: "YOU WIN", tone: "good" }, 2000);
+    } else if (meta.tone === "bad") {
+      showCenterOverlay({ text: "YOU LOSE", tone: "bad" }, 2000);
+    } else {
+      showCenterOverlay({ text: "PUSH", tone: "mid" }, 2000);
     }
 
-    const out = await apiJson<TgAuthResp>(API_BASE, AUTH_TG_PATH, {
-      method: "POST",
-      body: JSON.stringify({ initData }),
-    });
+    const title =
+      meta.label === "CANCELLED"
+        ? "CANCELLED"
+        : meta.tone === "good"
+          ? "YOU WIN"
+          : meta.tone === "bad"
+            ? "YOU LOSE"
+            : "PUSH";
 
-    if (!out?.ok || !out.session) throw new Error(out?.error || "Auth failed");
-    setSession(out.session);
-    setSignedIn(true);
-
-    const label = out.telegramHandle ? `@${out.telegramHandle}` : out.firstName || "";
-    if (label) setTgLabel(label);
-
-    return out.session;
+    showResultToast(
+      {
+        tone: meta.tone === "good" ? "good" : meta.tone === "bad" ? "bad" : "mid",
+        title,
+        net: profitTone(mapped.profitHuman).text || "0",
+        bet: mapped.totalBetHuman || mapped.betHuman || "",
+      },
+      2600
+    );
   }
 
-  async function loadBalances(s?: string) {
-    const sess = s || getSession();
-    if (!sess) return;
-    const out = await apiJson<MiniBalances>(API_BASE, ME_BALANCES_PATH, {
-      method: "GET",
-      headers: { "x-session": sess },
+  function startDealReveal(round: BlackjackRoundView, onDone?: () => void) {
+    clearDealTimers();
+
+    const player = Array.isArray(round.playerCards) ? round.playerCards.map(mapRoundCard) : [];
+    const dealer = Array.isArray(round.dealerCards) ? round.dealerCards.map(mapRoundCard) : [];
+
+    setDealReveal({
+      active: true,
+      playerCards: [],
+      dealerCards: [],
+      step: 0,
+      roundId: String(round.id || ""),
     });
-    if (!out?.ok) throw new Error(out?.error || "Bad balances response");
-    setBal(out);
+
+    const t1 = window.setTimeout(() => {
+      setDealReveal({
+        active: true,
+        playerCards: player[0] ? [player[0]] : [],
+        dealerCards: [],
+        step: 1,
+        roundId: String(round.id || ""),
+      });
+    }, 120);
+
+    const t2 = window.setTimeout(() => {
+      setDealReveal({
+        active: true,
+        playerCards: player[0] ? [player[0]] : [],
+        dealerCards: dealer[0] ? [dealer[0]] : [],
+        step: 2,
+        roundId: String(round.id || ""),
+      });
+    }, 300);
+
+    const t3 = window.setTimeout(() => {
+      setDealReveal({
+        active: true,
+        playerCards: player.slice(0, 2),
+        dealerCards: dealer[0] ? [dealer[0], { r: "🂠", s: "" }] : [],
+        step: 3,
+        roundId: String(round.id || ""),
+      });
+    }, 500);
+
+    const t4 = window.setTimeout(() => {
+      setDealReveal({
+        active: false,
+        playerCards: [],
+        dealerCards: [],
+        step: 4,
+        roundId: String(round.id || ""),
+      });
+      onDone?.();
+    }, 760);
+
+    dealTimersRef.current = [t1, t2, t3, t4];
   }
 
-  async function loadDepositUrlFromApi(s?: string) {
-    const sess = s || getSession();
-    if (!sess) {
-      setDepositUrl("");
+  async function loadBalancesAndInfo(activeJwt?: string) {
+    const token = activeJwt || getJwt();
+    if (!token) {
+      setBalances([]);
+      setInfo(null);
       return;
     }
 
-    setDepositBusy(true);
-    try {
-      for (const p of DEPOSIT_LINK_CANDIDATES) {
-        try {
-          const out = await apiJson<DepositLinkResp>(API_BASE, p, {
-            method: "GET",
-            headers: { "x-session": sess },
-          });
+    const [balRes, infoRes] = await Promise.all([
+      apiRequest<any>(API_BASE, ME_BALANCES_PATH, token, { method: "GET" }),
+      apiRequest<BlackjackInfoResponse>(API_BASE, BJ_INFO, token, {
+        method: "POST",
+        body: JSON.stringify({ chainId: TARGET_CHAIN_ID }),
+      }),
+    ]);
 
-          const url = String(out?.url || out?.link || out?.depositUrl || "").trim();
-          if (out?.ok && url.startsWith("http")) {
-            // SECURITY / UX: only accept URLs that point to the cashier app origin.
-            // This prevents accidentally opening the API host (eg ...trycloudflare.com/deposit).
-            if (isSameOriginAsCashier(url, CASHIER_URL)) {
-              setDepositUrl(url);
-              return;
+    setBalances(normalizeBalances(balRes));
+    setInfo(infoRes || null);
+  }
+
+  async function loadCurrentAndHistory(activeJwt?: string) {
+    const token = activeJwt || getJwt();
+    if (!token) {
+      setHistory([]);
+      return;
+    }
+
+    const [cur, hist] = await Promise.all([
+      apiRequest<BlackjackCurrentResponse>(API_BASE, `${BJ_CURRENT}?chainId=${TARGET_CHAIN_ID}`, token, {
+        method: "GET",
+      }),
+      apiRequest<BlackjackHistoryResponse>(API_BASE, `${BJ_HISTORY}?chainId=${TARGET_CHAIN_ID}&limit=10`, token, {
+        method: "GET",
+      }),
+    ]);
+
+    const round = cur?.round || null;
+    if (round) {
+      setRawRound(round);
+      setState(roundToBjState(round));
+    }
+
+    setHistory(Array.isArray(hist?.items) ? hist.items : []);
+  }
+
+  async function loadAll(activeJwt?: string) {
+    const token = activeJwt || getJwt();
+    if (!token) return;
+    await Promise.all([loadBalancesAndInfo(token), loadCurrentAndHistory(token)]);
+  }
+
+  const renderGoogleButton = React.useCallback(
+    (targetEl: HTMLDivElement | null) => {
+      if (!API_BASE || !googleClientId || !window.google?.accounts?.id || signedIn || !targetEl) return;
+
+      targetEl.innerHTML = "";
+
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response: any) => {
+          try {
+            setGoogleBusy(true);
+            setErr("");
+
+            const out = await apiRequest<GoogleVerifyResponse>(API_BASE, AUTH_GOOGLE_VERIFY_PATH, "", {
+              method: "POST",
+              body: JSON.stringify({ idToken: response?.credential || "" }),
+            });
+
+            const tokenJwt = String(out?.token || out?.jwt || "").trim();
+
+            if (!tokenJwt) {
+              if (out?.linked === false) {
+                setNeedsRegistration(true);
+                setGoogleLinkEmail(String(out?.email || ""));
+                setGoogleLinkName(String(out?.name || ""));
+                setGoogleLinkSub(String(out?.googleSub || ""));
+                setErr("No wallet is linked to this Google account yet.");
+                showTurnToast(
+                  {
+                    open: true,
+                    title: "Registration needed",
+                    sub: "Open setup and link your wallet first.",
+                  },
+                  1800
+                );
+                return;
+              }
+
+              throw new Error("Missing JWT from Google verify");
             }
+
+            setNeedsRegistration(false);
+            setGoogleLinkEmail("");
+            setGoogleLinkName("");
+            setGoogleLinkSub("");
+
+            setJwt(tokenJwt);
+            setSignedIn(true);
+            setWalletLabel(decodeJwtSubLabel(tokenJwt));
+            await loadAll(tokenJwt);
+            showTurnToast({ open: true, title: "✅ Signed in" }, 900);
+
+
+          } catch (e: any) {
+            const msg = String(e?.message || "Google sign-in failed.");
+            setErr(msg);
+            showTurnToast({ open: true, title: "❌ Sign in failed", sub: msg }, 1400);
+          } finally {
+            setGoogleBusy(false);
           }
-        } catch {
-          // try next candidate
-        }
-      }
+        },
+      });
 
-      // fallback: do NOT open the API host; keep depositUrl blank so UI uses CASHIER_URL.
-      setDepositUrl("");
-    } finally {
-      setDepositBusy(false);
-    }
-  }
+      window.google.accounts.id.renderButton(targetEl, {
+        theme: "outline",
+        size: "large",
+        shape: "pill",
+        text: "continue_with",
+        width: isMobile ? 260 : 300,
+      });
+    },
+    [API_BASE, googleClientId, isMobile, signedIn]
+  );
 
-  async function signIn() {
-    setErr("");
-    setActionBusy(true);
-    try {
-      const s = await ensureAuth();
-      await loadBalances(s);
-      // fetch deposit link too (since you want the REAL link from your /deposit flow)
-      void loadDepositUrlFromApi(s);
-      showTurnToast({ open: true, title: "✅ Signed in" }, 800);
-    } catch (e: any) {
-      const msg = String(e?.message || e);
-      setErr(msg);
-      showTurnToast({ open: true, title: "❌ Sign in failed", sub: msg }, 1400);
-      setSignedIn(!!getSession());
-    } finally {
-      setActionBusy(false);
-    }
-  }
-
-  function signOut() {
-    clearSession();
-    setSignedIn(false);
-    setBal(null);
-    setState(null);
-    setErr("");
-    setDepositUrl("");
-    setOverlay((o) => ({ ...o, open: false }));
-    setResultToast((t) => ({ ...t, open: false }));
-    showTurnToast({ open: true, title: "Signed out" }, 800);
-  }
-
-  // auto-auth in Telegram
   React.useEffect(() => {
-    if (!isTelegramWebApp()) return;
-    (async () => {
-      try {
-        if (getSession()) {
-          setSignedIn(true);
-          await loadBalances();
-          void loadDepositUrlFromApi();
-          return;
-        }
-        const s = await ensureAuth();
-        await loadBalances(s);
-        void loadDepositUrlFromApi(s);
-      } catch {
-        // show Sign In
-      }
-    })();
+    if (signedIn || !googleClientId) return;
+
+    const doRender = () => {
+      if (googleDesktopBtnRef.current) renderGoogleButton(googleDesktopBtnRef.current);
+      if (googleMobileBtnRef.current) renderGoogleButton(googleMobileBtnRef.current);
+    };
+
+    const existing = document.querySelector(
+      'script[src="https://accounts.google.com/gsi/client"]'
+    ) as HTMLScriptElement | null;
+
+    if (existing) {
+      const onLoad = () => setTimeout(doRender, 30);
+      existing.addEventListener("load", onLoad);
+      if (window.google?.accounts?.id) onLoad();
+      return () => existing.removeEventListener("load", onLoad);
+    }
+
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.defer = true;
+    s.onload = () => setTimeout(doRender, 30);
+    document.head.appendChild(s);
+
+    return () => {
+      s.onload = null;
+    };
+  }, [signedIn, googleClientId, renderGoogleButton]);
+
+  React.useEffect(() => {
+    const token = getJwt();
+    if (!token) return;
+    setSignedIn(true);
+    setWalletLabel(decodeJwtSubLabel(token));
+    void loadAll(token);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // when opening cashier modal, refresh deposit link (and balances) quietly
-  React.useEffect(() => {
-    if (!cashierOpen) return;
-    if (!signedIn) return;
-    (async () => {
-      try {
-        const s = await ensureAuth();
-        await loadBalances(s);
-        void loadDepositUrlFromApi(s);
-      } catch {
-        // silent
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cashierOpen, signedIn]);
+  function signOut() {
+    clearJwt();
+    setSignedIn(false);
+    setWalletLabel("");
+    setBalances([]);
+    setInfo(null);
+    setState(null);
+    setRawRound(null);
+    setHistory([]);
+    setErr("");
+    setNeedsRegistration(false);
+    setGoogleLinkEmail("");
+    setGoogleLinkName("");
+    setGoogleLinkSub("");
+    setCashierOpen(false);
 
-  const canPlay = signedIn && !bal?.railsPaused;
+    setCashierOpen(false);
+    setOverlay((o) => ({ ...o, open: false }));
+    setResultToast((t) => ({ ...t, open: false }));
+    clearDealTimers();
+    setDealReveal({
+      active: false,
+      playerCards: [],
+      dealerCards: [],
+      step: 0,
+      roundId: "",
+    });
+    showTurnToast({ open: true, title: "Signed out" }, 800);
+  }
+
+  function openCashier() {
+    try {
+      window.open(CASHIER_URL, "_blank", "noopener,noreferrer");
+    } catch {
+      window.location.href = CASHIER_URL;
+    }
+  }
 
   async function startWithBet(betHuman: string) {
     setErr("");
     setActionBusy(true);
     try {
-      const s = await ensureAuth();
-      if (bal?.railsPaused) throw new Error("Rails are paused. Movement actions are disabled.");
+      const token = getJwt();
+      if (!token) throw new Error("Sign in with Google first.");
 
       const b = clampBetHuman(betHuman);
       if (safeNumFromString(b) <= 0) throw new Error("Bet must be > 0");
 
-      const out = await apiJson<BJState>(API_BASE, BJ_START, {
-        method: "POST",
-        headers: { "x-session": s },
-        body: JSON.stringify({ betHuman: b }),
-      });
+      try {
+        const out = await apiRequest<BlackjackStartResponse>(API_BASE, BJ_START, token, {
+          method: "POST",
+          body: JSON.stringify({
+            chainId: TARGET_CHAIN_ID,
+            betHuman: b,
+            clientRequestId: `web-bj:${Date.now()}`,
+          }),
+        });
 
-      if (!out || !out.gameId) throw new Error("Bad response from /mini/blackjack/start");
+        const nextRound = out?.round || null;
+        if (nextRound) {
+          setLastBet(b);
+          setRawRound(nextRound);
 
-      setState(out);
-      setLastBet(b); // lastBet is the rebet anchor
-      setOverlay((o) => ({ ...o, open: false }));
-      setResultToast((t) => ({ ...t, open: false }));
-      await loadBalances(s);
+          startDealReveal(nextRound, () => {
+            setState(roundToBjState(nextRound));
 
-      showTurnToast({ open: true, title: "🎴 Dealt", sub: "Your turn" }, 800);
+            if (isResolvedRoundStatus(nextRound.status)) {
+              announceResolvedRound(nextRound);
+            } else {
+              showTurnToast({ open: true, title: "🎴 Dealt", sub: "Your turn" }, 800);
+            }
+          });
+        }
+      } catch (e: any) {
+        const msg = String(e?.message || e || "");
+        if (msg === "ROUND_ALREADY_ACTIVE") {
+          await loadCurrentAndHistory(token);
+          showTurnToast({ open: true, title: "🃏 Active hand loaded" }, 1000);
+          return;
+        }
+        throw e;
+      }
+
+      await loadBalancesAndInfo(token);
+      await loadCurrentAndHistory(token);
     } catch (e: any) {
       const msg = String(e?.message || e);
       setErr(msg);
@@ -1262,25 +1622,29 @@ export default function BlackjackPage() {
   }
 
   async function act(path: string) {
-    const cur = stateRef.current;
-    if (!cur) return;
+    if (!rawRound) return;
 
     setErr("");
     setActionBusy(true);
     try {
-      const s = await ensureAuth();
+      const token = getJwt();
+      if (!token) throw new Error("Sign in with Google first.");
 
-      const out = await apiJson<BJState>(API_BASE, path, {
+      const out = await apiRequest<{ ok?: boolean; round: BlackjackRoundView }>(API_BASE, path, token, {
         method: "POST",
-        headers: { "x-session": s },
-        body: JSON.stringify({ gameId: cur.gameId }),
+        body: JSON.stringify({ chainId: TARGET_CHAIN_ID }),
       });
 
-      setState(out);
-
-      if (out.status !== "ACTIVE") {
-        await loadBalances(s);
+      const nextRound = out?.round || null;
+      if (nextRound) {
+        setRawRound(nextRound);
+        setState(roundToBjState(nextRound));
       }
+
+      if (nextRound && isResolvedRoundStatus(nextRound.status)) {
+        await loadBalancesAndInfo(token);
+      }
+      await loadCurrentAndHistory(token);
     } catch (e: any) {
       const msg = String(e?.message || e);
       setErr(msg);
@@ -1291,30 +1655,34 @@ export default function BlackjackPage() {
   }
 
   async function refreshSilent() {
-    const cur = stateRef.current;
-    if (!cur) return;
+    if (!rawRound) return;
 
     try {
-      const s = await ensureAuth();
-      const qp = new URLSearchParams();
-      qp.set("gameId", cur.gameId);
+      const token = getJwt();
+      if (!token) return;
 
-      const out = await apiJson<BJState>(API_BASE, `${BJ_STATUS}?${qp.toString()}`, {
+      const out = await apiRequest<BlackjackCurrentResponse>(API_BASE, `${BJ_CURRENT}?chainId=${TARGET_CHAIN_ID}`, token, {
         method: "GET",
-        headers: { "x-session": s },
       });
 
-      setState(out);
-
-      if (cur.status === "DEALER_TURN" && out.status !== "DEALER_TURN") {
-        await loadBalances(s);
+      const round = out?.round || null;
+      if (round) {
+        setRawRound(round);
+        setState(roundToBjState(round));
+        if (isResolvedRoundStatus(round.status)) {
+          await loadBalancesAndInfo(token);
+        }
       }
+
+      const hist = await apiRequest<BlackjackHistoryResponse>(API_BASE, `${BJ_HISTORY}?chainId=${TARGET_CHAIN_ID}&limit=10`, token, {
+        method: "GET",
+      });
+      setHistory(Array.isArray(hist?.items) ? hist.items : []);
     } catch {
       // silent
     }
   }
 
-  // silent polling while ACTIVE/DEALER_TURN
   React.useEffect(() => {
     const cur = stateRef.current;
     if (!cur) return;
@@ -1325,29 +1693,17 @@ export default function BlackjackPage() {
       void refreshSilent();
     };
 
-    let intervalMs = 1500;
-    if (cur.status === "DEALER_TURN") {
-      const nextAt = typeof cur.dealerNextAtMs === "number" ? cur.dealerNextAtMs : null;
-      if (nextAt && nextAt > Date.now()) intervalMs = Math.min(1200, Math.max(300, nextAt - Date.now()));
-      else intervalMs = 750;
-    }
-
-    const t = window.setInterval(tick, intervalMs);
+    const t = window.setInterval(tick, cur.status === "DEALER_TURN" ? 800 : 1400);
     return () => window.clearInterval(t);
-  }, [actionBusy, state?.status, state?.gameId, state?.dealerNextAtMs]);
+  }, [actionBusy, state?.status, state?.gameId]);
 
-  /** =========================
-   *  Overlay trigger at end of hand
-   *  - ALWAYS: good => YOU WIN, bad => YOU LOSE, mid => PUSH
-   *  - Works for PLAYER_BLACKJACK / DEALER_BLACKJACK too
-   *  - ALSO: bottom result toast overlay (no layout squash)
-   * ========================= */
   const prevStatusRef = React.useRef<BJState["status"] | null>(null);
   const prevGameIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     const st = state;
     if (!st) return;
+    if (dealReveal.active) return;
 
     if (prevGameIdRef.current && prevGameIdRef.current !== st.gameId) {
       setTurnToast((t) => ({ ...t, open: false }));
@@ -1373,7 +1729,6 @@ export default function BlackjackPage() {
     if ((st.status === "RESOLVED" || st.status === "CANCELLED") && prev !== st.status) {
       const meta = outcomeMeta(st.outcome ?? (st.status === "CANCELLED" ? "CANCELLED" : null));
 
-      // Big center overlay (kept)
       if (meta.label === "CANCELLED") {
         showCenterOverlay({ text: "CANCELLED", tone: "mid" }, 2000);
       } else if (meta.tone === "good") {
@@ -1384,7 +1739,6 @@ export default function BlackjackPage() {
         showCenterOverlay({ text: "PUSH", tone: "mid" }, 2000);
       }
 
-      // Bottom result toast overlay (replaces the old dock strip)
       const title =
         meta.label === "CANCELLED"
           ? "CANCELLED"
@@ -1404,11 +1758,73 @@ export default function BlackjackPage() {
         2600
       );
     }
-  }, [state]);
+  }, [state, dealReveal.active]);
 
-  /** =========================
-   *  Layout sizing
-   *  ========================= */
+  /** ===== Critical fix: enrich balances with tokenlist names/decimals and then force USDC selection ===== */
+  const balanceRows = React.useMemo<TokenOption[]>(() => {
+    return balances
+      .filter((b) => Number(b.chainId) === TARGET_CHAIN_ID)
+      .map((b) => {
+        const token = String(b.token || "").toLowerCase();
+        const meta = tokenMetaByChainAddr.get(`${Number(b.chainId)}:${token}`);
+        const rawSymbol = String(b.symbol || meta?.symbol || "").toUpperCase();
+        const symbol = rawSymbol || "TOKEN";
+
+        const decimals =
+          symbol === "USDC"
+            ? 6
+            : Number.isFinite(Number(meta?.decimals))
+              ? Number(meta?.decimals)
+              : Number.isFinite(Number(b.decimals))
+                ? Number(b.decimals)
+                : 18;
+
+        const avail = String(b.availableRaw ?? b.balanceRaw ?? b.totalRaw ?? "0");
+
+        return {
+          key: `${b.chainId}:${token}`,
+          token,
+          symbol,
+          decimals,
+          availableRaw: avail,
+          heldRaw: String(b.heldRaw ?? "0"),
+          availableHuman:
+            typeof b.balanceHuman === "string" && b.balanceHuman.trim() && symbol !== "USDC"
+              ? b.balanceHuman.trim()
+              : formatAmount(avail, decimals, 6),
+        };
+      })
+      .sort((a, b) => {
+        if (a.symbol === "USDC" && b.symbol !== "USDC") return -1;
+        if (b.symbol === "USDC" && a.symbol !== "USDC") return 1;
+        if (safeBigInt(b.availableRaw) > safeBigInt(a.availableRaw)) return 1;
+        if (safeBigInt(b.availableRaw) < safeBigInt(a.availableRaw)) return -1;
+        return 0;
+      });
+  }, [balances, tokenMetaByChainAddr]);
+
+  const selectedBalance = React.useMemo<TokenOption | null>(() => {
+    if (!balanceRows.length) return null;
+
+    const infoToken = String(info?.token || "").toLowerCase();
+    const infoSymbol = String(info?.symbol || "").toUpperCase();
+
+    return (
+      balanceRows.find((x) => x.token === infoToken) ||
+      balanceRows.find((x) => x.symbol === "USDC") ||
+      balanceRows.find((x) => x.symbol === infoSymbol) ||
+      null
+    );
+  }, [balanceRows, info]);
+
+  const visibleCreditRows = React.useMemo(() => {
+    if (!selectedBalance) return [];
+    return [selectedBalance];
+  }, [selectedBalance]);
+
+  const creditsLabel = selectedBalance?.availableHuman || "0";
+  const creditsSymbol = selectedBalance?.symbol || "USDC";
+
   const maxWidth = 980;
   const sidePad = isMobile ? 10 : 14;
 
@@ -1429,14 +1845,14 @@ export default function BlackjackPage() {
   const stackHands = hasMultiHands && !isWide;
 
   const dealerCardH = clamp(Math.round(dealerH * 0.56), isMobile ? 70 : 78, isWide ? 120 : 104);
-  const dealerCardW = clamp(Math.round(dealerCardH * 0.70), isMobile ? 52 : 58, isWide ? 84 : 72);
+  const dealerCardW = clamp(Math.round(dealerCardH * 0.7), isMobile ? 52 : 58, isWide ? 84 : 72);
 
   const playerCardH = clamp(
     Math.round(playerH * (hasMultiHands ? 0.42 : 0.52)),
     isMobile ? 68 : 78,
     isWide ? 116 : 100
   );
-  const playerCardW = clamp(Math.round(playerCardH * 0.70), isMobile ? 50 : 58, isWide ? 82 : 70);
+  const playerCardW = clamp(Math.round(playerCardH * 0.7), isMobile ? 50 : 58, isWide ? 82 : 70);
 
   const mkDims = (w: number, h: number): CardDims => {
     const minSide = Math.min(w, h);
@@ -1453,11 +1869,17 @@ export default function BlackjackPage() {
   const isActive = state?.status === "ACTIVE";
   const isDealerTurn = state?.status === "DEALER_TURN";
 
-  const dealerCards: BJCard[] =
-    state?.dealer && state.dealer.length ? state.dealer : state?.dealerUp?.length ? state.dealerUp : [];
+  const dealerCards: BJCard[] = dealReveal.active
+    ? dealReveal.dealerCards
+    : state?.dealer && state.dealer.length
+      ? state.dealer
+      : state?.dealerUp?.length
+        ? state.dealerUp
+        : [];
 
-  const dealerTotal =
-    isActive
+  const dealerTotal = dealReveal.active
+    ? computeHandTotal(dealReveal.dealerCards.filter((c) => c.r !== "🂠"))
+    : isActive
       ? state?.dealerUpTotal ?? computeHandTotal(state?.dealerUp || [])
       : isDealerTurn
         ? typeof state?.dealerVisibleTotal === "number"
@@ -1467,51 +1889,20 @@ export default function BlackjackPage() {
           ? state.dealerTotal
           : computeHandTotal(dealerCards);
 
-  const activeHandTotal =
-    state && state.playerHands?.length
+  const activeHandTotal = dealReveal.active
+    ? computeHandTotal(dealReveal.playerCards)
+    : state && state.playerHands?.length
       ? state.handTotals?.[state.activeHand] ?? computeHandTotal(state.playerHands[state.activeHand] || [])
       : 0;
 
   const betVal = safeNumFromString(clampBetHuman(bet));
-  const setBetHuman = (v: number) => setBet(String(Math.max(0, Math.floor(v))));
-
-  // small toast geometry
-  const toastW = clamp(Math.floor(contentW - 18), 220, 360);
-  const toastTop = clamp((headerH || 54) + 8, 56, 92);
-
-  // bottom result toast geometry (above dock, no layout changes)
-  const resultToastW = clamp(Math.floor(contentW - 18), 260, 520);
-  const resultToastBottom = Math.floor(dockH + 18 + 10);
-
-  // Turn highlighting
-  const dealerGlow = isDealerTurn
-    ? {
-        borderColor: UI.borderStrong,
-        boxShadow: "0 0 0 2px rgba(255,200,0,0.22), 0 18px 40px rgba(0,0,0,0.30)",
-        background: "rgba(255,200,0,0.06)",
-      }
-    : {};
-
-  const playerGlow = isActive
-    ? {
-        borderColor: UI.borderStrong,
-        boxShadow: "0 0 0 2px rgba(255,200,0,0.22), 0 18px 40px rgba(0,0,0,0.30)",
-        background: "rgba(255,200,0,0.06)",
-      }
-    : {};
-
-  const creditsLabel = bal?.offchain?.human ? formatCreditsZero(bal.offchain.human) : "—";
-
+  const canPlay = signedIn && !!selectedBalance;
   const canDeal = !actionBusy && canPlay && !(state?.status === "ACTIVE" || state?.status === "DEALER_TURN");
   const betLocked = !!state && (state.status === "ACTIVE" || state.status === "DEALER_TURN");
 
-  // Header bet chip: to the RIGHT of the turn pill
   const headerBetLabel = `Bet ${state?.totalBetHuman ? state.totalBetHuman : clampBetHuman(bet)}`;
-
-  // Gamebar fixed button sizing
   const BTN_H = isMobile ? 44 : 46;
 
-  // Decide gamebar mode
   const mode: "ACTIVE" | "DEALER" | "END" | "IDLE" =
     state?.status === "ACTIVE"
       ? "ACTIVE"
@@ -1521,30 +1912,39 @@ export default function BlackjackPage() {
           ? "END"
           : "IDLE";
 
-  // ACTIVE buttons (only show when actually usable -> no greyed buttons)
   const canShowHit = mode === "ACTIVE" && !!state?.canHit && !actionBusy;
   const canShowStand = mode === "ACTIVE" && !!state?.canStand && !actionBusy;
   const canShowDouble = mode === "ACTIVE" && !!state?.canDouble && !actionBusy;
-  const canShowSplit = mode === "ACTIVE" && !!state?.canSplit && !actionBusy;
+  const canShowSplit = false;
 
-  // END/IDLE buttons
-  const canShowBet = (mode === "IDLE" || mode === "END") && canPlay && !betLocked && !actionBusy;
+  const canShowBet = (mode === "IDLE" || mode === "END") && signedIn && !betLocked && !actionBusy;
   const canShowDeal = (mode === "IDLE" || mode === "END") && canDeal;
 
-  // Rebet greys if bet changed (bet != lastBet)
   const betNow = clampBetHuman(bet);
   const rebetDisabled = betNow !== clampBetHuman(lastBet);
+  const canShowRebet = (mode === "IDLE" || mode === "END") && signedIn && !actionBusy;
 
-  const canShowRebet = (mode === "IDLE" || mode === "END") && canPlay && !actionBusy;
+  const toastW = clamp(Math.floor(contentW - 18), 220, 360);
+  const toastTop = clamp((headerH || 54) + 8, 56, 92);
 
-  const canShowCashOrSign = !actionBusy && (signedIn ? true : isTelegramWebApp());
-  const onCashOrSign = () => {
-    if (signedIn) setCashierOpen(true);
-    else void signIn();
-  };
+  const resultToastW = clamp(Math.floor(contentW - 18), 260, 520);
+  const resultToastBottom = Math.floor(dockH + 18 + 10);
 
-  const resolvedDepositUrl =
-    (depositUrl && depositUrl.startsWith("http") ? depositUrl : "") || CASHIER_URL;
+  const dealerGlow = isDealerTurn
+    ? {
+        borderColor: UI.borderStrong,
+        boxShadow: "0 0 0 2px rgba(255,200,0,0.22), 0 18px 40px rgba(0,0,0,0.30)",
+        background: "rgba(255,200,0,0.06)",
+      }
+    : {};
+
+  const playerGlow = isActive || dealReveal.active
+    ? {
+        borderColor: UI.borderStrong,
+        boxShadow: "0 0 0 2px rgba(255,200,0,0.22), 0 18px 40px rgba(0,0,0,0.30)",
+        background: "rgba(255,200,0,0.06)",
+      }
+    : {};
 
   return (
     <Box
@@ -1558,7 +1958,6 @@ export default function BlackjackPage() {
         justifyContent: "center",
       }}
     >
-      {/* Small turn toast */}
       <TurnToast
         toast={turnToast}
         onClose={() => setTurnToast((t) => ({ ...t, open: false }))}
@@ -1566,10 +1965,8 @@ export default function BlackjackPage() {
         topPx={toastTop}
       />
 
-      {/* Big center overlay (YOU WIN / YOU LOSE / PUSH) */}
       <CenterResultOverlay overlay={overlay} />
 
-      {/* Bottom result toast overlay (FIXES SQUASHING) */}
       <ResultToastOverlay
         toast={resultToast}
         onClose={() => setResultToast((t) => ({ ...t, open: false }))}
@@ -1577,7 +1974,6 @@ export default function BlackjackPage() {
         bottomPx={resultToastBottom}
       />
 
-      {/* Centered container */}
       <Box
         sx={{
           width: "100%",
@@ -1603,7 +1999,6 @@ export default function BlackjackPage() {
             flexDirection: "column",
           }}
         >
-          {/* Header */}
           <Box
             ref={headerM.ref}
             sx={{
@@ -1617,74 +2012,46 @@ export default function BlackjackPage() {
             }}
           >
             <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
-              {/*
-
-    {tgLabel ? (
-      <Chip
-        size="small"
-        variant="outlined"
-        label={tgLabel}
-        sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
-      />
-    ) : null}
-
-
-    <Button
-      onClick={() => setCashierOpen(true)}
-      variant="outlined"
-      disabled={!signedIn}
-      sx={{ borderRadius: 2, fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
-    >
-      💰 Cashier
-    </Button>
-
-    {!signedIn ? (
-      <Button
-        onClick={signIn}
-        variant="contained"
-        disabled={actionBusy || !isTelegramWebApp()}
-        sx={{ borderRadius: 2, fontWeight: 950 }}
-      >
-        Sign In
-      </Button>
-    ) : (
-      <Button
-        onClick={signOut}
-        variant="outlined"
-        disabled={actionBusy}
-        sx={{ borderRadius: 2, fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
-      >
-        Sign Out
-      </Button>
-    )}
-
-    {actionBusy ? <CircularProgress size={20} /> : null}
-
-    */}
-
-              {bal?.railsPaused ? <Chip size="small" color="warning" label="Paused" /> : null}
+              {walletLabel ? (
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={`${walletLabel.slice(0, 6)}…${walletLabel.slice(-4)}`}
+                  sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
+                />
+              ) : null}
 
               <Chip
                 size="small"
                 variant="outlined"
-                label={`🪙 ${creditsLabel}`}
+                label={`🪙 ${creditsLabel} ${creditsSymbol}`}
                 sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}
               />
+
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`Fuji ${TARGET_CHAIN_ID}`}
+                sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
+              />
+
+              {actionBusy || googleBusy ? <CircularProgress size={20} /> : null}
             </Box>
 
-            {/* RIGHT cluster: Turn pill + Bet amount pill */}
             <Box sx={{ display: "flex", gap: 1, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
               <Chip
                 size="small"
                 variant="outlined"
                 label={
-                  state?.status
-                    ? state.status === "ACTIVE"
-                      ? "Your turn"
-                      : state.status === "DEALER_TURN"
-                        ? "Dealer turn"
-                        : "Done"
-                    : "Ready"
+                  dealReveal.active
+                    ? "Dealing"
+                    : state?.status
+                      ? state.status === "ACTIVE"
+                        ? "Your turn"
+                        : state.status === "DEALER_TURN"
+                          ? "Dealer turn"
+                          : "Done"
+                      : "Ready"
                 }
                 sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
               />
@@ -1697,7 +2064,6 @@ export default function BlackjackPage() {
             </Box>
           </Box>
 
-          {/* Table */}
           <Box
             sx={{
               flex: "1 1 auto",
@@ -1707,184 +2073,300 @@ export default function BlackjackPage() {
               minHeight: 0,
             }}
           >
-            <Paper
-              variant="outlined"
-              sx={{
-                height: `${tableH}px`,
-                p: isMobile ? 1.0 : 1.2,
-                borderRadius: 4,
-                background:
-                  "radial-gradient(900px 520px at 50% 0%, rgba(0,255,160,0.09), transparent 60%), rgba(0,0,0,0.22)",
-                borderColor: UI.border,
-                display: "flex",
-                flexDirection: "column",
-                gap: 1.2,
-                overflow: "hidden",
-              }}
-            >
-              {/* Dealer */}
+            {!signedIn ? (
               <Paper
                 variant="outlined"
                 sx={{
-                  height: `${dealerH}px`,
-                  p: isMobile ? 1.0 : 1.1,
-                  borderRadius: 3,
+                  height: `${tableH}px`,
+                  p: isMobile ? 1.0 : 1.4,
+                  borderRadius: 4,
+                  background:
+                    "radial-gradient(900px 520px at 50% 0%, rgba(0,255,160,0.09), transparent 60%), rgba(0,0,0,0.22)",
                   borderColor: UI.border,
-                  background: UI.panelBg2,
                   display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  overflow: "hidden",
-                  ...(dealerGlow as any),
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "auto",
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontWeight: 990, fontSize: isMobile ? 13 : 14, color: UI.textMain }}>
-                    Dealer {isDealerTurn ? "• TURN" : ""}
-                  </Typography>
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={`TOTAL ${dealerTotal}`}
-                    sx={{ fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
-                  />
-                </Box>
-
-                <Box
+                <Stack
+                  spacing={1.5}
                   sx={{
-                    display: "flex",
-                    justifyContent: "center",
+                    width: "100%",
+                    maxWidth: 420,
                     alignItems: "center",
-                    flex: "1 1 auto",
-                    minHeight: 0,
+                    textAlign: "center",
                   }}
                 >
-                  <Fan cards={dealerCards} forceHoleCard={!!isActive} dims={dealerDims} maxWidth={contentW - 28} />
-                </Box>
+                  <Typography sx={{ color: UI.textMain, fontSize: 26, fontWeight: 1100 }}>
+                    🃏 The Haus Blackjack
+                  </Typography>
 
-                <Box sx={{ display: "flex", justifyContent: "center", minHeight: 20 }}>
-                  {isDealerTurn ? (
-                    <Typography sx={{ color: UI.textDim, fontWeight: 900, fontSize: 12 }}>
-                      ⏳ Dealer drawing…{" "}
-                      {typeof state?.dealerNextAtMs === "number" ? msToShort(state.dealerNextAtMs - Date.now()) : ""}
+                  <Typography sx={{ color: UI.textDim, fontWeight: 900 }}>
+                    Sign in with the Google account linked to your cashier wallet.
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      minHeight: 48,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <div ref={googleDesktopBtnRef} />
+                  </Box>
+
+                  {googleBusy ? <CircularProgress size={22} /> : null}
+
+                  {err ? (
+                    <Typography sx={{ color: UI.bad, fontSize: 13, fontWeight: 900 }}>
+                      {err}
                     </Typography>
-                  ) : (
-                    <Typography sx={{ color: "transparent" }}>.</Typography>
-                  )}
-                </Box>
-              </Paper>
+                  ) : null}
 
-              {/* Player */}
+                  {needsRegistration ? (
+                    <Stack spacing={1} sx={{ width: "100%", maxWidth: 420, mt: 1 }}>
+                      <Typography sx={{ color: UI.textDim, fontSize: 13, fontWeight: 900, textAlign: "center" }}>
+                        No wallet is linked to this Google account yet.
+                      </Typography>
+
+                      <UnregisteredGoogleRegisterButton
+                        label="Register Wallet"
+                        fullWidth
+                        googleEmail={googleLinkEmail}
+                        googleName={googleLinkName}
+                        googleSub={googleLinkSub}
+                        onCopied={() => showTurnToast({ open: true, title: "Link copied" }, 900)}
+                      />
+                    </Stack>
+                  ) : null}
+                </Stack>
+              </Paper>
+            ) : (
               <Paper
                 variant="outlined"
                 sx={{
-                  height: `${playerH}px`,
-                  p: isMobile ? 1.0 : 1.1,
-                  borderRadius: 3,
+                  height: `${tableH}px`,
+                  p: isMobile ? 1.0 : 1.2,
+                  borderRadius: 4,
+                  background:
+                    "radial-gradient(900px 520px at 50% 0%, rgba(0,255,160,0.09), transparent 60%), rgba(0,0,0,0.22)",
                   borderColor: UI.border,
-                  background: UI.panelBg2,
-                  overflow: "hidden",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 1.0,
-                  ...(playerGlow as any),
+                  gap: 1.2,
+                  overflow: "hidden",
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontWeight: 990, fontSize: isMobile ? 13 : 14, color: UI.textMain }}>
-                    Player {isActive ? "• TURN" : ""}
-                  </Typography>
-                  {state ? (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    height: `${dealerH}px`,
+                    p: isMobile ? 1.0 : 1.1,
+                    borderRadius: 3,
+                    borderColor: UI.border,
+                    background: UI.panelBg2,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    overflow: "hidden",
+                    ...(dealerGlow as any),
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ fontWeight: 990, fontSize: isMobile ? 13 : 14, color: UI.textMain }}>
+                      Dealer {isDealerTurn ? "• TURN" : ""}
+                    </Typography>
                     <Chip
                       size="small"
                       variant="outlined"
-                      label={`TOTAL ${activeHandTotal}`}
+                      label={`TOTAL ${dealerTotal}`}
                       sx={{ fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
                     />
-                  ) : (
-                    <Chip size="small" variant="outlined" label="No hand" sx={{ color: UI.textMain, borderColor: UI.border }} />
-                  )}
-                </Box>
-
-                {!state ? (
-                  <Box sx={{ flex: "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Typography sx={{ color: UI.textDim, fontWeight: 900 }}>
-                      Set bet → <span style={{ color: UI.textMain }}>Deal</span>
-                    </Typography>
                   </Box>
-                ) : (
-                  <Box sx={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
-                    <Stack
-                      direction={stackHands ? "column" : "row"}
-                      spacing={1.0}
-                      sx={{ height: "100%", alignItems: "stretch", justifyContent: "center" }}
-                    >
-                      {state.playerHands.map((hand, idx) => {
-                        const isActiveHand = state.status === "ACTIVE" && idx === state.activeHand;
-                        const handBoxW =
-                          stackHands ? contentW - 30 : hasMultiHands ? Math.floor((contentW - 30 - 10) / 2) : contentW - 30;
 
-                        return (
-                          <Paper
-                            key={idx}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      flex: "1 1 auto",
+                      minHeight: 0,
+                    }}
+                  >
+                    <Fan
+                      cards={dealReveal.active ? dealReveal.dealerCards : dealerCards}
+                      forceHoleCard={dealReveal.active ? dealReveal.step >= 3 : !!isActive}
+                      dims={dealerDims}
+                      maxWidth={contentW - 28}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: "flex", justifyContent: "center", minHeight: 20 }}>
+                    {isDealerTurn ? (
+                      <Typography sx={{ color: UI.textDim, fontWeight: 900, fontSize: 12 }}>
+                        ⏳ Dealer drawing…{" "}
+                        {typeof state?.dealerNextAtMs === "number" ? msToShort(state.dealerNextAtMs - Date.now()) : ""}
+                      </Typography>
+                    ) : (
+                      <Typography sx={{ color: "transparent" }}>.</Typography>
+                    )}
+                  </Box>
+                </Paper>
+
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    height: `${playerH}px`,
+                    p: isMobile ? 1.0 : 1.1,
+                    borderRadius: 3,
+                    borderColor: UI.border,
+                    background: UI.panelBg2,
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.0,
+                    ...(playerGlow as any),
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ fontWeight: 990, fontSize: isMobile ? 13 : 14, color: UI.textMain }}>
+                      Player {isActive || dealReveal.active ? "• TURN" : ""}
+                    </Typography>
+                    {(state || dealReveal.active) ? (
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        label={`TOTAL ${dealReveal.active ? computeHandTotal(dealReveal.playerCards) : activeHandTotal}`}
+                        sx={{ fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
+                      />
+                    ) : (
+                      <Chip size="small" variant="outlined" label="No hand" sx={{ color: UI.textMain, borderColor: UI.border }} />
+                    )}
+                  </Box>
+
+                  {!state && !dealReveal.active ? (
+                    <Box sx={{ flex: "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Typography sx={{ color: UI.textDim, fontWeight: 900 }}>
+                        Set bet → <span style={{ color: UI.textMain }}>Deal</span>
+                      </Typography>
+                    </Box>
+                  ) : dealReveal.active ? (
+                    <Box sx={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          flex: "0 1 100%",
+                          p: 0.9,
+                          borderRadius: 3,
+                          borderWidth: 2,
+                          borderColor: UI.borderStrong,
+                          background: "rgba(255,200,0,0.08)",
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                          minWidth: 0,
+                          height: "100%",
+                        }}
+                      >
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.6 }}>
+                          <Box />
+                          <Chip
+                            size="small"
                             variant="outlined"
-                            sx={{
-                              flex: stackHands ? "1 1 0" : hasMultiHands ? "0 1 50%" : "0 1 100%",
-                              p: 0.9,
-                              borderRadius: 3,
-                              borderWidth: isActiveHand ? 2 : 1,
-                              borderColor: isActiveHand ? UI.borderStrong : UI.border,
-                              background: isActiveHand ? "rgba(255,200,0,0.08)" : "rgba(255,255,255,0.03)",
-                              display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "center",
-                              overflow: "hidden",
-                              minWidth: 0,
-                            }}
-                          >
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.6 }}>
-                              {hasMultiHands ? (
+                            label={`${computeHandTotal(dealReveal.playerCards)}`}
+                            sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
+                          />
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            flex: "1 1 auto",
+                            minHeight: 0,
+                          }}
+                        >
+                          <Fan cards={dealReveal.playerCards} dims={playerDims} maxWidth={contentW - 30} />
+                        </Box>
+                      </Paper>
+                    </Box>
+                  ) : (
+                    <Box sx={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
+                      <Stack
+                        direction={stackHands ? "column" : "row"}
+                        spacing={1.0}
+                        sx={{ height: "100%", alignItems: "stretch", justifyContent: "center" }}
+                      >
+                        {state!.playerHands.map((hand, idx) => {
+                          const isActiveHand = state!.status === "ACTIVE" && idx === state!.activeHand;
+                          const handBoxW =
+                            stackHands ? contentW - 30 : hasMultiHands ? Math.floor((contentW - 30 - 10) / 2) : contentW - 30;
+
+                          return (
+                            <Paper
+                              key={idx}
+                              variant="outlined"
+                              sx={{
+                                flex: stackHands ? "1 1 0" : hasMultiHands ? "0 1 50%" : "0 1 100%",
+                                p: 0.9,
+                                borderRadius: 3,
+                                borderWidth: isActiveHand ? 2 : 1,
+                                borderColor: isActiveHand ? UI.borderStrong : UI.border,
+                                background: isActiveHand ? "rgba(255,200,0,0.08)" : "rgba(255,255,255,0.03)",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                overflow: "hidden",
+                                minWidth: 0,
+                              }}
+                            >
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.6 }}>
+                                {hasMultiHands ? (
+                                  <Chip
+                                    size="small"
+                                    variant="outlined"
+                                    label={`Hand ${idx + 1}${isActiveHand ? " • ACTIVE" : ""}`}
+                                    sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
+                                  />
+                                ) : (
+                                  <Box />
+                                )}
                                 <Chip
                                   size="small"
                                   variant="outlined"
-                                  label={`Hand ${idx + 1}${isActiveHand ? " • ACTIVE" : ""}`}
+                                  label={`${state!.handTotals?.[idx] ?? computeHandTotal(hand)}`}
                                   sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
                                 />
-                              ) : (
-                                <Box />
-                              )}
-                              <Chip
-                                size="small"
-                                variant="outlined"
-                                label={`${state.handTotals?.[idx] ?? computeHandTotal(hand)}`}
-                                sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 900 }}
-                              />
-                            </Box>
+                              </Box>
 
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                flex: "1 1 auto",
-                                minHeight: 0,
-                              }}
-                            >
-                              <Fan cards={hand} dims={playerDims} maxWidth={handBoxW} />
-                            </Box>
-                          </Paper>
-                        );
-                      })}
-                    </Stack>
-                  </Box>
-                )}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                  flex: "1 1 auto",
+                                  minHeight: 0,
+                                }}
+                              >
+                                <Fan cards={hand} dims={playerDims} maxWidth={handBoxW} />
+                              </Box>
+                            </Paper>
+                          );
+                        })}
+                      </Stack>
+                    </Box>
+                  )}
+                </Paper>
               </Paper>
-            </Paper>
+            )}
           </Box>
         </Box>
       </Box>
 
-      {/* Fixed Bottom Game Bar (ALWAYS SAME HEIGHT; no greyed buttons) */}
       <Box
         ref={dockM.ref}
         sx={{
@@ -1915,7 +2397,6 @@ export default function BlackjackPage() {
           }}
         >
           <Stack spacing={1}>
-            {/* Fixed “4-button” block (2 rows x 2 cols) */}
             <Box
               sx={{
                 borderRadius: 3,
@@ -1924,27 +2405,25 @@ export default function BlackjackPage() {
                 p: isMobile ? 0.9 : 1.0,
               }}
             >
-              {/* Row 1 */}
               <Stack direction="row" spacing={1} sx={{ width: "100%" }}>
-                {/* ACTIVE => HIT ; END/IDLE => DEAL (Deal on top) */}
-                <Slot show={mode === "ACTIVE" ? canShowHit : mode === "END" || mode === "IDLE" ? canDeal : false} h={BTN_H}>
+                <Slot show={mode === "ACTIVE" ? canShowHit : mode === "END" || mode === "IDLE" ? canShowDeal : false} h={46}>
                   <ActionBtn
-                    h={BTN_H}
+                    h={46}
                     onClick={() => {
                       if (mode === "ACTIVE") void act(BJ_HIT);
                       else void start();
                     }}
                     variant="contained"
                     color={mode === "ACTIVE" ? "success" : undefined}
+                    disabled={!signedIn || googleBusy || !selectedBalance || dealReveal.active}
                   >
                     {mode === "ACTIVE" ? "👆 HIT" : "🎴 Deal"}
                   </ActionBtn>
                 </Slot>
 
-                {/* ACTIVE => STAND ; END/IDLE => BET */}
-                <Slot show={mode === "ACTIVE" ? canShowStand : mode === "END" || mode === "IDLE" ? canShowBet : false} h={BTN_H}>
+                <Slot show={mode === "ACTIVE" ? canShowStand : mode === "END" || mode === "IDLE" ? canShowBet : false} h={46}>
                   <ActionBtn
-                    h={BTN_H}
+                    h={46}
                     onClick={() => {
                       if (mode === "ACTIVE") void act(BJ_STAND);
                       else setBetModalOpen(true);
@@ -1952,50 +2431,62 @@ export default function BlackjackPage() {
                     variant={mode === "ACTIVE" ? "contained" : "outlined"}
                     color={mode === "ACTIVE" ? "error" : undefined}
                     outlined={mode !== "ACTIVE"}
+                    disabled={mode !== "ACTIVE" ? !signedIn || googleBusy : dealReveal.active}
                   >
                     {mode === "ACTIVE" ? "✋ STAND" : "🪙 Bet"}
                   </ActionBtn>
                 </Slot>
               </Stack>
 
-              {/* Row 2 */}
               <Stack direction="row" spacing={1} sx={{ width: "100%", mt: 1 }}>
-                {/* ACTIVE => DOUBLE ; END/IDLE => REBET (Rebet under Deal) */}
-                <Slot show={mode === "ACTIVE" ? canShowDouble : mode === "END" || mode === "IDLE" ? canShowRebet : false} h={BTN_H}>
+                <Slot show={mode === "ACTIVE" ? canShowDouble : mode === "END" || mode === "IDLE" ? canShowRebet : false} h={46}>
                   <ActionBtn
-                    h={BTN_H}
+                    h={46}
                     onClick={() => {
                       if (mode === "ACTIVE") void act(BJ_DOUBLE);
                       else void startWithBet(lastBet);
                     }}
                     variant={mode === "ACTIVE" ? "outlined" : "contained"}
                     outlined={mode === "ACTIVE"}
-                    disabled={mode !== "ACTIVE" ? rebetDisabled : false}
+                    disabled={mode !== "ACTIVE" ? rebetDisabled || !signedIn || googleBusy || !selectedBalance : dealReveal.active}
                   >
                     {mode === "ACTIVE" ? "⏫ Double" : "🔁 Rebet"}
                   </ActionBtn>
                 </Slot>
 
-                {/* ACTIVE => SPLIT ; END/IDLE => Cashier/Sign In */}
-                <Slot show={mode === "ACTIVE" ? canShowSplit : mode === "END" || mode === "IDLE" ? canShowCashOrSign : false} h={BTN_H}>
-                  <ActionBtn
-                    h={BTN_H}
-                    onClick={() => {
-                      if (mode === "ACTIVE") void act(BJ_SPLIT);
-                      else onCashOrSign();
-                    }}
-                    variant="outlined"
-                    outlined
-                  >
-                    {mode === "ACTIVE" ? "✂️ Split" : signedIn ? "💰 Cashier" : "Sign In"}
-                  </ActionBtn>
+                <Slot show={mode === "ACTIVE" ? canShowSplit : true} h={46}>
+                  {!signedIn ? (
+                    <ActionBtn
+                      h={46}
+                      onClick={() => {
+                        const target =
+                          (isMobile ? googleMobileBtnRef.current : googleDesktopBtnRef.current) ||
+                          googleDesktopBtnRef.current ||
+                          googleMobileBtnRef.current;
+                        const clickable = target?.querySelector("div[role='button'], iframe") as HTMLElement | null;
+                        clickable?.click?.();
+                      }}
+                      variant="contained"
+                      disabled={googleBusy}
+                    >
+                      Sign In
+                    </ActionBtn>
+                  ) : (
+                    <ActionBtn
+                      h={46}
+                      onClick={() => setCashierOpen(true)}
+                      variant="outlined"
+                      outlined
+                    >
+                      💰 Cashier
+                    </ActionBtn>
+                  )}
                 </Slot>
               </Stack>
             </Box>
 
             {err ? <Typography sx={{ color: UI.bad, fontSize: 12, fontWeight: 900, mt: 0.2 }}>{err}</Typography> : null}
 
-            {/* Rebet disabled hint (only when visible) */}
             {(mode === "END" || mode === "IDLE") && canShowRebet && rebetDisabled ? (
               <Typography sx={{ color: UI.textFaint, fontSize: 12, fontWeight: 900 }}>
                 🔁 Rebet is locked — set bet back to {clampBetHuman(lastBet)} to rebet.
@@ -2005,30 +2496,27 @@ export default function BlackjackPage() {
         </Paper>
       </Box>
 
-      {/* Bet Modal */}
       <ModalShell
         open={betModalOpen}
         title="Set your bet"
         onClose={() => setBetModalOpen(false)}
         actions={
-          <>
-            <Button onClick={() => setBetModalOpen(false)} sx={{ color: UI.textMain, fontWeight: 900 }}>
-              Close
-            </Button>
-          </>
+          <Button onClick={() => setBetModalOpen(false)} sx={{ color: UI.textMain, fontWeight: 900 }}>
+            Close
+          </Button>
         }
       >
-        <Typography sx={{ color: UI.textDim, mb: 1 }}>Choose chips (credits):</Typography>
+        <Typography sx={{ color: UI.textDim, mb: 1 }}>Choose chips ({creditsSymbol}):</Typography>
 
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          {[10, 25, 50, 100, 250, 500, 1000, 2500, 5000].map((v) => (
+          {[0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50].map((v) => (
             <Button
               key={v}
               variant="outlined"
-              onClick={() => setBetHuman(v)}
+              onClick={() => setBet(clampBetHuman(String(v)))}
               sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}
             >
-              {v} 🪙
+              {v} {creditsSymbol}
             </Button>
           ))}
         </Stack>
@@ -2037,25 +2525,53 @@ export default function BlackjackPage() {
 
         <Typography sx={{ color: UI.textDim, mb: 1 }}>Fine tune:</Typography>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          <Button variant="outlined" onClick={() => setBetHuman(betVal - 10)} sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}>
-            -10
+          <Button
+            variant="outlined"
+            onClick={() => setBet(clampBetHuman(String(Math.max(0, betVal - 0.1))))}
+            sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}
+          >
+            -0.1
           </Button>
-          <Button variant="outlined" onClick={() => setBetHuman(betVal + 10)} sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}>
-            +10
+          <Button
+            variant="outlined"
+            onClick={() => setBet(clampBetHuman(String(betVal + 0.1)))}
+            sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}
+          >
+            +0.1
           </Button>
-          <Button variant="outlined" onClick={() => setBetHuman(betVal + 50)} sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}>
-            +50
+          <Button
+            variant="outlined"
+            onClick={() => setBet(clampBetHuman(String(betVal + 0.5)))}
+            sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}
+          >
+            +0.5
           </Button>
-          <Button variant="outlined" onClick={() => setBetHuman(betVal + 100)} sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}>
-            +100
+          <Button
+            variant="outlined"
+            onClick={() => setBet(clampBetHuman(String(betVal + 1)))}
+            sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}
+          >
+            +1
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setBet(selectedBalance?.availableHuman || "0")}
+            sx={{ color: UI.textMain, borderColor: UI.border, fontWeight: 950 }}
+            disabled={!selectedBalance}
+          >
+            MAX
           </Button>
         </Stack>
 
         <Divider sx={{ my: 2, borderColor: UI.border, opacity: 0.6 }} />
-        <Typography sx={{ color: UI.textMain, fontWeight: 990 }}>Current bet: {clampBetHuman(bet)}</Typography>
+        <Typography sx={{ color: UI.textMain, fontWeight: 990 }}>
+          Current bet: {clampBetHuman(bet)} {creditsSymbol}
+        </Typography>
+        <Typography sx={{ color: UI.textFaint, fontSize: 12, mt: 0.7 }}>
+          Available: {creditsLabel} {creditsSymbol}
+        </Typography>
       </ModalShell>
 
-      {/* Cashier Modal (updated: deposit link fetched from /deposit flow + sign in/out + friendlier copy) */}
       <ModalShell
         open={cashierOpen}
         title="Cashier"
@@ -2066,46 +2582,55 @@ export default function BlackjackPage() {
               Close
             </Button>
 
-            {/* Sign In / Sign Out inside modal */}
             {!signedIn ? (
               <Button
-                onClick={() => void signIn()}
                 variant="contained"
-                disabled={actionBusy || !isTelegramWebApp()}
-                sx={{ borderRadius: 2, fontWeight: 950 }}
+                onClick={() => {
+                  const target = googleDesktopBtnRef.current || googleMobileBtnRef.current;
+                  const clickable = target?.querySelector("div[role='button'], iframe") as HTMLElement | null;
+                  clickable?.click?.();
+                }}
+                sx={{ fontWeight: 950 }}
               >
                 Sign In
               </Button>
             ) : (
-              <Button
-                onClick={() => {
-                  signOut();
-                  setCashierOpen(false);
-                }}
-                variant="outlined"
-                disabled={actionBusy}
-                sx={{ borderRadius: 2, fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
-              >
-                Sign Out
-              </Button>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  onClick={() => {
+                    signOut();
+                    setCashierOpen(false);
+                  }}
+                  variant="outlined"
+                  disabled={actionBusy}
+                  sx={{ borderRadius: 2, fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
+                >
+                  Sign Out
+                </Button>
+                <Button
+                  onClick={openCashier}
+                  variant="contained"
+                  disabled={actionBusy}
+                  sx={{ borderRadius: 2, fontWeight: 950 }}
+                >
+                  Open Cashier
+                </Button>
+              </Stack>
             )}
           </Stack>
         }
       >
         {!signedIn ? (
           <Stack spacing={1.2}>
-            <Typography sx={{ color: UI.textMain, fontWeight: 950 }}>Sign in to view your credits and wallet.</Typography>
-            <Typography sx={{ color: UI.textDim, fontSize: 13 }}>
-              Open this inside Telegram (Mini App) so we can verify your session securely.
+            <Typography sx={{ color: UI.textMain, fontWeight: 950 }}>
+              Sign in with Google to view your cashier balance and play blackjack.
             </Typography>
-
-            <Paper variant="outlined" sx={{ p: 1.2, borderRadius: 2, borderColor: UI.border, background: "rgba(255,255,255,0.05)" }}>
-              <Typography sx={{ color: UI.textDim, fontSize: 13 }}>Once signed in, you’ll get a Deposit button here.</Typography>
-            </Paper>
+            <Typography sx={{ color: UI.textDim, fontSize: 13 }}>
+              Use the same Google account already linked to your wallet-backed cashier account.
+            </Typography>
           </Stack>
         ) : (
           <Stack spacing={1.2}>
-            {/* Balance Card */}
             <Paper
               variant="outlined"
               sx={{
@@ -2115,22 +2640,60 @@ export default function BlackjackPage() {
                 background: "rgba(255,255,255,0.05)",
               }}
             >
-              <Typography sx={{ fontWeight: 990, color: UI.textMain }}>🪙 YETI Credits</Typography>
+              <Typography sx={{ fontWeight: 990, color: UI.textMain }}>💰 Haus Cashier Balance</Typography>
               <Typography sx={{ color: UI.textDim, fontSize: 20, fontWeight: 950, mt: 0.2 }}>
-                {formatCreditsZero(bal?.offchain?.human)}
+                {creditsLabel} {creditsSymbol}
               </Typography>
 
               <Divider sx={{ my: 1.1, borderColor: UI.border, opacity: 0.6 }} />
 
-              <Typography sx={{ color: UI.textFaint, fontSize: 12 }}>Telegram ID: {bal?.telegramUserId || "—"}</Typography>
+              <Typography sx={{ color: UI.textFaint, fontSize: 12 }}>
+                Wallet: {walletLabel ? `${walletLabel.slice(0, 6)}…${walletLabel.slice(-4)}` : "—"}
+              </Typography>
 
               <Typography sx={{ color: UI.textFaint, fontSize: 12, mt: 0.4 }}>
-                Wallet: {bal?.wallet ? `${bal.wallet.slice(0, 6)}…${bal.wallet.slice(-4)}` : "—"}{" "}
-                {bal?.walletVerified ? "✅ verified" : "❌ unverified"}
+                Treasury: {info?.treasuryId || "blackjack-43113-usdc"}
               </Typography>
             </Paper>
 
-            {/* Deposit button (uses REAL link fetched from /deposit flow; no reconstruct-from-api-base nonsense) */}
+            {visibleCreditRows.length ? (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.2,
+                  borderRadius: 2,
+                  borderColor: UI.border,
+                  background: "rgba(255,255,255,0.04)",
+                }}
+              >
+                <Typography sx={{ fontWeight: 950, color: UI.textMain, mb: 0.8 }}>Linked cashier credits</Typography>
+                <Stack spacing={0.8}>
+                  {visibleCreditRows.map((b) => (
+                    <Box
+                      key={b.key}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        border: `1px solid ${UI.border}`,
+                        borderRadius: 2,
+                        px: 1.2,
+                        py: 0.9,
+                        background: "rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      <Typography sx={{ color: UI.textMain, fontWeight: 900 }}>
+                        {b.symbol}
+                      </Typography>
+                      <Typography sx={{ color: UI.textDim, fontWeight: 900 }}>
+                        {b.availableHuman}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              </Paper>
+            ) : null}
+
             <Paper
               variant="outlined"
               sx={{
@@ -2140,58 +2703,29 @@ export default function BlackjackPage() {
                 background: "rgba(0,0,0,0.22)",
               }}
             >
-              <Typography sx={{ fontWeight: 950, color: UI.textMain }}>Deposit</Typography>
+              <Typography sx={{ fontWeight: 950, color: UI.textMain }}>Open cashier</Typography>
               <Typography sx={{ color: UI.textDim, fontSize: 13, mt: 0.2 }}>
-                This uses the same deposit link your <b>/deposit</b> flow returns (session-based), so it stays correct even if the
-                deposit page lives somewhere else.
+                Deposit, manage balances, and use the rest of the Haus cashier app.
               </Typography>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 1.1 }}>
                 <Button
                   variant="contained"
-                  onClick={() => {
-                    let url = resolvedDepositUrl;
-
-                    try {
-                      const u = new URL(url);
-                      const api = new URL(API_BASE);
-                      if (u.origin === api.origin) {
-                        // NEVER open API host in the browser
-                        url = CASHIER_URL;
-                      }
-                    } catch {
-                      url = CASHIER_URL;
-                    }
-
-                    // Telegram-friendly open
-                    try {
-                      window.Telegram?.WebApp?.openLink?.(url, { try_instant_view: false });
-                      return;
-                    } catch {}
-
-                    // Fallback
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  }}
+                  onClick={openCashier}
                   sx={{ borderRadius: 2, fontWeight: 950 }}
-                  disabled={actionBusy || depositBusy}
+                  disabled={actionBusy}
                   fullWidth
                 >
-                  {depositBusy ? "Loading link…" : "🌐 Open Deposit Page"}
+                  🌐 Open Cashier
                 </Button>
 
                 <Button
                   variant="outlined"
                   onClick={() => {
-                    void (async () => {
-                      try {
-                        const s = await ensureAuth();
-                        await loadBalances(s);
-                        await loadDepositUrlFromApi(s);
-                      } catch {}
-                    })();
+                    void loadAll();
                   }}
                   sx={{ borderRadius: 2, fontWeight: 950, color: UI.textMain, borderColor: UI.border }}
-                  disabled={actionBusy || depositBusy}
+                  disabled={actionBusy}
                   fullWidth
                 >
                   🔄 Refresh
@@ -2199,28 +2733,20 @@ export default function BlackjackPage() {
               </Stack>
 
               <Typography sx={{ color: UI.textFaint, fontSize: 12, mt: 0.9 }}>
-                Deposit link: {resolvedDepositUrl}
+                Cashier: {CASHIER_URL}
               </Typography>
             </Paper>
-
-            {/* Rails paused warning */}
-            {bal?.railsPaused ? (
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 1.2,
-                  borderRadius: 2,
-                  borderColor: "rgba(255,200,0,0.35)",
-                  background: "rgba(255,200,0,0.10)",
-                }}
-              >
-                <Typography sx={{ fontWeight: 990, color: UI.textMain }}>⚠️ Rails Paused</Typography>
-                <Typography sx={{ color: UI.textDim, fontSize: 13 }}>Movement actions are temporarily disabled.</Typography>
-              </Paper>
-            ) : null}
           </Stack>
         )}
       </ModalShell>
+      <UnregisteredGooglePrompt
+        open={needsRegistration}
+        onClose={() => setNeedsRegistration(false)}
+        googleEmail={googleLinkEmail}
+        googleName={googleLinkName}
+        googleSub={googleLinkSub}
+        onCopied={() => showTurnToast({ open: true, title: "Link copied" }, 900)}
+      />      
     </Box>
   );
 }

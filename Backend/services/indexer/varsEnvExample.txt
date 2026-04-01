@@ -1,6 +1,0 @@
-CORE_API_URL=http://127.0.0.1:8088
-INDEXER_SHARED_KEY=
-CONFIG_PATH=../core-api/config/system.json
-START_BLOCK=0
-POLL_MS=3000
-LOG_LEVEL=info
