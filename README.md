@@ -18,6 +18,10 @@ The core idea is simple:
 
 ## Quick Links
 
+
+- **Webpage:** [The Haus Web Page](https://thehauspage.netlify.app/)
+  
+
 - **Live Dapp:** [The Haus Fuji MVP](https://thehaus-fuji-mvp.netlify.app/)
 
 - **Signed wallet session demonstration Dice Demo:** [SIWE Spend w/out tx Dice Game Demo](https://thehaus-fuji-mvp.netlify.app/#/dice)
